@@ -1,0 +1,342 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Enhanced Animated Dot Backgrounds */
+.floating-dots {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Multiple Animated Dot Layers */
+.floating-dots::before,
+.floating-dots::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Primary Floating Dots Layer */
+.floating-dots::before {
+  background-image: 
+    radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.2) 3px, transparent 3px),
+    radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.2) 2px, transparent 2px),
+    radial-gradient(circle at 40% 60%, rgba(59, 130, 246, 0.2) 4px, transparent 4px),
+    radial-gradient(circle at 70% 30%, rgba(236, 72, 153, 0.2) 2px, transparent 2px),
+    radial-gradient(circle at 10% 90%, rgba(34, 197, 94, 0.2) 3px, transparent 3px),
+    radial-gradient(circle at 90% 10%, rgba(251, 191, 36, 0.2) 2px, transparent 2px);
+  background-size: 80px 80px, 60px 60px, 100px 100px, 70px 70px, 90px 90px, 50px 50px;
+  animation: floatDots 15s ease-in-out infinite;
+}
+
+/* Secondary Pulsing Dots Layer */
+.floating-dots::after {
+  background-image: 
+    radial-gradient(circle at 30% 70%, rgba(139, 69, 19, 0.15) 2px, transparent 2px),
+    radial-gradient(circle at 60% 40%, rgba(220, 38, 127, 0.15) 3px, transparent 3px),
+    radial-gradient(circle at 85% 60%, rgba(16, 185, 129, 0.15) 2px, transparent 2px),
+    radial-gradient(circle at 15% 40%, rgba(245, 101, 101, 0.15) 4px, transparent 4px);
+  background-size: 120px 120px, 85px 85px, 65px 65px, 110px 110px;
+  animation: pulseDots 12s ease-in-out infinite reverse;
+}
+
+/* Dark Mode Variations */
+.floating-dots-dark::before {
+  background-image: 
+    radial-gradient(circle at 20% 20%, rgba(147, 197, 253, 0.15) 3px, transparent 3px),
+    radial-gradient(circle at 80% 80%, rgba(196, 181, 253, 0.15) 2px, transparent 2px),
+    radial-gradient(circle at 40% 60%, rgba(147, 197, 253, 0.15) 4px, transparent 4px),
+    radial-gradient(circle at 70% 30%, rgba(251, 207, 232, 0.15) 2px, transparent 2px),
+    radial-gradient(circle at 10% 90%, rgba(134, 239, 172, 0.15) 3px, transparent 3px),
+    radial-gradient(circle at 90% 10%, rgba(253, 224, 71, 0.15) 2px, transparent 2px);
+}
+
+.floating-dots-dark::after {
+  background-image: 
+    radial-gradient(circle at 30% 70%, rgba(180, 83, 9, 0.1) 2px, transparent 2px),
+    radial-gradient(circle at 60% 40%, rgba(244, 63, 94, 0.1) 3px, transparent 3px),
+    radial-gradient(circle at 85% 60%, rgba(52, 211, 153, 0.1) 2px, transparent 2px),
+    radial-gradient(circle at 15% 40%, rgba(248, 113, 113, 0.1) 4px, transparent 4px);
+}
+
+/* Primary Float Animation */
+@keyframes floatDots {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) scale(1);
+    opacity: 0.8;
+  }
+  25% {
+    transform: translateY(-20px) translateX(15px) scale(1.1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-10px) translateX(-10px) scale(0.9);
+    opacity: 0.6;
+  }
+  75% {
+    transform: translateY(-30px) translateX(8px) scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+/* Secondary Pulse Animation */
+@keyframes pulseDots {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) scale(1);
+    opacity: 0.5;
+  }
+  20% {
+    transform: translateY(10px) translateX(-5px) scale(1.2);
+    opacity: 0.8;
+  }
+  40% {
+    transform: translateY(-5px) translateX(12px) scale(0.8);
+    opacity: 0.3;
+  }
+  60% {
+    transform: translateY(15px) translateX(-8px) scale(1.1);
+    opacity: 0.7;
+  }
+  80% {
+    transform: translateY(-12px) translateX(6px) scale(0.95);
+    opacity: 0.6;
+  }
+}
+
+/* Rotating Dots Animation */
+.rotating-dots {
+  position: relative;
+  overflow: hidden;
+}
+
+.rotating-dots::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  transform: translate(-50%, -50%);
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.3) 4px, transparent 4px),
+    radial-gradient(circle at 100% 50%, rgba(168, 85, 247, 0.3) 3px, transparent 3px),
+    radial-gradient(circle at 50% 100%, rgba(59, 130, 246, 0.3) 4px, transparent 4px),
+    radial-gradient(circle at 0% 50%, rgba(236, 72, 153, 0.3) 3px, transparent 3px);
+  background-size: 100px 100px;
+  animation: rotateDots 20s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes rotateDots {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Bouncing Dots */
+.bouncing-dots {
+  position: relative;
+  overflow: hidden;
+}
+
+.bouncing-dots::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(34, 197, 94, 0.25) 3px, transparent 3px),
+    radial-gradient(circle at 75% 25%, rgba(251, 191, 36, 0.25) 3px, transparent 3px),
+    radial-gradient(circle at 25% 75%, rgba(239, 68, 68, 0.25) 3px, transparent 3px),
+    radial-gradient(circle at 75% 75%, rgba(147, 51, 234, 0.25) 3px, transparent 3px);
+  background-size: 150px 150px;
+  animation: bounceDots 8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes bounceDots {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  25% {
+    transform: translateY(-15px) scale(1.1);
+  }
+  50% {
+    transform: translateY(-25px) scale(0.9);
+  }
+  75% {
+    transform: translateY(-10px) scale(1.05);
+  }
+}
+
+/* Spiral Dots Animation */
+.spiral-dots {
+  position: relative;
+  overflow: hidden;
+}
+
+.spiral-dots::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  transform: translate(-50%, -50%);
+  background-image: 
+    radial-gradient(circle at 50% 20%, rgba(99, 102, 241, 0.2) 2px, transparent 2px),
+    radial-gradient(circle at 80% 35%, rgba(168, 85, 247, 0.2) 3px, transparent 3px),
+    radial-gradient(circle at 80% 65%, rgba(59, 130, 246, 0.2) 2px, transparent 2px),
+    radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.2) 3px, transparent 3px),
+    radial-gradient(circle at 20% 65%, rgba(34, 197, 94, 0.2) 2px, transparent 2px),
+    radial-gradient(circle at 20% 35%, rgba(251, 191, 36, 0.2) 3px, transparent 3px);
+  background-size: 100px 100px;
+  animation: spiralDots 25s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes spiralDots {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(180deg) scale(1.2);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg) scale(1);
+  }
+}
+
+/* Wave Dots Animation */
+.wave-dots {
+  position: relative;
+  overflow: hidden;
+}
+
+.wave-dots::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 10% 50%, rgba(99, 102, 241, 0.2) 3px, transparent 3px),
+    radial-gradient(circle at 30% 50%, rgba(168, 85, 247, 0.2) 3px, transparent 3px),
+    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.2) 3px, transparent 3px),
+    radial-gradient(circle at 70% 50%, rgba(236, 72, 153, 0.2) 3px, transparent 3px),
+    radial-gradient(circle at 90% 50%, rgba(34, 197, 94, 0.2) 3px, transparent 3px);
+  background-size: 100px 100px;
+  animation: waveDots 10s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes waveDots {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  20% {
+    transform: translateY(-10px);
+  }
+  40% {
+    transform: translateY(-20px);
+  }
+  60% {
+    transform: translateY(-15px);
+  }
+  80% {
+    transform: translateY(-5px);
+  }
+}
+
+/* Enhanced Card Backgrounds with Animated Dots */
+.card-with-dots {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-with-dots::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.08) 2px, transparent 2px),
+    radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.08) 1px, transparent 1px);
+  background-size: 30px 30px, 25px 25px;
+  animation: cardDots 18s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.card-with-dots-dark::before {
+  background-image: 
+    radial-gradient(circle at 20% 20%, rgba(147, 197, 253, 0.05) 2px, transparent 2px),
+    radial-gradient(circle at 80% 80%, rgba(196, 181, 253, 0.05) 1px, transparent 1px);
+}
+
+@keyframes cardDots {
+  0%, 100% {
+    transform: translateX(0px) translateY(0px);
+    opacity: 0.6;
+  }
+  25% {
+    transform: translateX(5px) translateY(-3px);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateX(-3px) translateY(5px);
+    opacity: 0.4;
+  }
+  75% {
+    transform: translateX(2px) translateY(-2px);
+    opacity: 0.7;
+  }
+}
+
+/* Ensure content stays above the dots */
+.floating-dots > *,
+.rotating-dots > *,
+.bouncing-dots > *,
+.spiral-dots > *,
+.wave-dots > *,
+.card-with-dots > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Responsive Dot Sizes */
+@media (max-width: 640px) {
+  .floating-dots::before,
+  .floating-dots::after {
+    background-size: 40px 40px, 30px 30px, 50px 50px, 35px 35px, 45px 45px, 25px 25px;
+  }
+  
+  .rotating-dots::before {
+    width: 150px;
+    height: 150px;
+    background-size: 75px 75px;
+  }
+  
+  .spiral-dots::before {
+    width: 200px;
+    height: 200px;
+    background-size: 60px 60px;
+  }
+}
