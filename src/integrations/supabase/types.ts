@@ -44,6 +44,69 @@ export type Database = {
         }
         Relationships: []
       }
+      incidents: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          resolved_at: string | null
+          severity: string
+          started_at: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          resolved_at?: string | null
+          severity?: string
+          started_at?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          resolved_at?: string | null
+          severity?: string
+          started_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      keep_alive_log: {
+        Row: {
+          error_message: string | null
+          id: string
+          pinged_at: string
+          record_count: number | null
+          response_time_ms: number
+          status: string
+        }
+        Insert: {
+          error_message?: string | null
+          id?: string
+          pinged_at?: string
+          record_count?: number | null
+          response_time_ms?: number
+          status?: string
+        }
+        Update: {
+          error_message?: string | null
+          id?: string
+          pinged_at?: string
+          record_count?: number | null
+          response_time_ms?: number
+          status?: string
+        }
+        Relationships: []
+      }
       search_logs: {
         Row: {
           created_at: string
@@ -62,6 +125,27 @@ export type Database = {
           found?: boolean
           id?: string
           roll_number?: string
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          value: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          value?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          value?: string | null
         }
         Relationships: []
       }
