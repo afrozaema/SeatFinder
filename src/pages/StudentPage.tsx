@@ -259,7 +259,7 @@ function StudentPage() {
           <motion.div ref={resultsRef} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: 'easeOut' }} className="space-y-6">
             {/* Quick Summary Banner */}
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}
-              className={`rounded-2xl shadow-xl border p-5 sm:p-6 card-with-dots ${isDarkMode ? 'bg-gradient-to-r from-blue-900/40 via-purple-900/40 to-pink-900/40 border-blue-500/20 card-with-dots-dark' : 'bg-gradient-to-r from-blue-50/80 via-purple-50/80 to-pink-50/80 border-purple-200/60'}`}>
+              className={`rounded-2xl shadow-xl border p-5 sm:p-6 card-with-dots w-fit mx-auto ${isDarkMode ? 'bg-gradient-to-r from-blue-900/40 via-purple-900/40 to-pink-900/40 border-blue-500/20 card-with-dots-dark' : 'bg-gradient-to-r from-blue-50/80 via-purple-50/80 to-pink-50/80 border-purple-200/60'}`}>
               <div className="flex flex-col items-center gap-3">
                 {/* Avatar */}
                 <div className="p-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full shadow-lg shadow-blue-500/20">
