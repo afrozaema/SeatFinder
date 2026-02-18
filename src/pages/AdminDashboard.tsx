@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import {
   GraduationCap, LogOut, Plus, Pencil, Trash2, Search, Users,
-  Building, MapPin, Clock, Save, X, AlertCircle, CheckCircle
+  Building, MapPin, Clock, Save, X, AlertCircle, CheckCircle,
+  Activity, BarChart3, Filter, ChevronDown, Eye, TrendingUp
 } from 'lucide-react';
 
 interface Student {
@@ -22,10 +23,29 @@ interface Student {
   map_url: string;
 }
 
+interface ActivityLog {
+  id: string;
+  user_id: string;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  details: string | null;
+  created_at: string;
+}
+
+interface SearchLog {
+  id: string;
+  roll_number: string;
+  found: boolean;
+  created_at: string;
+}
+
 const emptyStudent = {
   roll_number: '', name: '', institution: '', building: '', room: '', floor: '',
   report_time: '', start_time: '', end_time: '', directions: '', map_url: ''
 };
+
+type Tab = 'students' | 'activity' | 'search-logs';
 
 export default function AdminDashboard() {
   const { user, isAdmin, loading: authLoading, signOut } = useAuth();
@@ -37,6 +57,17 @@ export default function AdminDashboard() {
   const [formData, setFormData] = useState(emptyStudent);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>('students');
+
+  // Advanced filters
+  const [filterInstitution, setFilterInstitution] = useState('');
+  const [filterBuilding, setFilterBuilding] = useState('');
+  const [filterFloor, setFilterFloor] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Activity & Search logs
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [searchLogs, setSearchLogs] = useState<SearchLog[]>([]);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -45,7 +76,11 @@ export default function AdminDashboard() {
   }, [user, isAdmin, authLoading, navigate]);
 
   useEffect(() => {
-    if (user && isAdmin) fetchStudents();
+    if (user && isAdmin) {
+      fetchStudents();
+      fetchActivityLogs();
+      fetchSearchLogs();
+    }
   }, [user, isAdmin]);
 
   const fetchStudents = async () => {
@@ -55,6 +90,36 @@ export default function AdminDashboard() {
       .order('roll_number');
     if (data) setStudents(data);
     if (error) showMessage('error', error.message);
+  };
+
+  const fetchActivityLogs = async () => {
+    const { data } = await supabase
+      .from('activity_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (data) setActivityLogs(data as ActivityLog[]);
+  };
+
+  const fetchSearchLogs = async () => {
+    const { data } = await supabase
+      .from('search_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (data) setSearchLogs(data as SearchLog[]);
+  };
+
+  const logActivity = async (action: string, entityType: string, entityId?: string, details?: string) => {
+    if (!user) return;
+    await supabase.from('activity_logs').insert({
+      user_id: user.id,
+      action,
+      entity_type: entityType,
+      entity_id: entityId || null,
+      details: details || null,
+    });
+    fetchActivityLogs();
   };
 
   const showMessage = (type: 'success' | 'error', text: string) => {
@@ -82,11 +147,13 @@ export default function AdminDashboard() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this student?')) return;
+    const student = students.find(s => s.id === id);
     const { error } = await supabase.from('students').delete().eq('id', id);
     if (error) {
       showMessage('error', error.message);
     } else {
       showMessage('success', 'Student deleted successfully');
+      await logActivity('DELETE', 'student', id, `Deleted student: ${student?.name} (${student?.roll_number})`);
       fetchStudents();
     }
   };
@@ -98,11 +165,17 @@ export default function AdminDashboard() {
     if (editingId) {
       const { error } = await supabase.from('students').update(formData).eq('id', editingId);
       if (error) showMessage('error', error.message);
-      else showMessage('success', 'Student updated successfully');
+      else {
+        showMessage('success', 'Student updated successfully');
+        await logActivity('UPDATE', 'student', editingId, `Updated student: ${formData.name} (${formData.roll_number})`);
+      }
     } else {
-      const { error } = await supabase.from('students').insert(formData);
+      const { data, error } = await supabase.from('students').insert(formData).select();
       if (error) showMessage('error', error.message);
-      else showMessage('success', 'Student added successfully');
+      else {
+        showMessage('success', 'Student added successfully');
+        await logActivity('INSERT', 'student', data?.[0]?.id, `Added student: ${formData.name} (${formData.roll_number})`);
+      }
     }
 
     setSaving(false);
@@ -112,11 +185,32 @@ export default function AdminDashboard() {
     fetchStudents();
   };
 
-  const filteredStudents = students.filter(s =>
-    s.roll_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.institution.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Unique values for filters
+  const institutions = [...new Set(students.map(s => s.institution))].sort();
+  const buildings = [...new Set(students.map(s => s.building))].sort();
+  const floors = [...new Set(students.map(s => s.floor))].sort();
+
+  const filteredStudents = students.filter(s => {
+    const matchesSearch =
+      s.roll_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.institution.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesInstitution = !filterInstitution || s.institution === filterInstitution;
+    const matchesBuilding = !filterBuilding || s.building === filterBuilding;
+    const matchesFloor = !filterFloor || s.floor === filterFloor;
+    return matchesSearch && matchesInstitution && matchesBuilding && matchesFloor;
+  });
+
+  // Search log stats
+  const totalSearches = searchLogs.length;
+  const successfulSearches = searchLogs.filter(l => l.found).length;
+  const topSearched = searchLogs.reduce((acc, log) => {
+    acc[log.roll_number] = (acc[log.roll_number] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const topSearchedList = Object.entries(topSearched)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 10);
 
   if (authLoading) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -150,18 +244,22 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl p-4 shadow-sm border flex items-center space-x-4">
             <div className="p-3 bg-blue-100 rounded-full"><Users className="w-6 h-6 text-blue-600" /></div>
             <div><p className="text-2xl font-bold text-gray-900">{students.length}</p><p className="text-sm text-gray-500">Total Students</p></div>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border flex items-center space-x-4">
             <div className="p-3 bg-green-100 rounded-full"><Building className="w-6 h-6 text-green-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{new Set(students.map(s => s.institution)).size}</p><p className="text-sm text-gray-500">Institutions</p></div>
+            <div><p className="text-2xl font-bold text-gray-900">{institutions.length}</p><p className="text-sm text-gray-500">Institutions</p></div>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border flex items-center space-x-4">
-            <div className="p-3 bg-purple-100 rounded-full"><MapPin className="w-6 h-6 text-purple-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{new Set(students.map(s => s.building)).size}</p><p className="text-sm text-gray-500">Buildings</p></div>
+            <div className="p-3 bg-purple-100 rounded-full"><Eye className="w-6 h-6 text-purple-600" /></div>
+            <div><p className="text-2xl font-bold text-gray-900">{totalSearches}</p><p className="text-sm text-gray-500">Total Searches</p></div>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border flex items-center space-x-4">
+            <div className="p-3 bg-orange-100 rounded-full"><TrendingUp className="w-6 h-6 text-orange-600" /></div>
+            <div><p className="text-2xl font-bold text-gray-900">{totalSearches > 0 ? Math.round((successfulSearches / totalSearches) * 100) : 0}%</p><p className="text-sm text-gray-500">Search Success</p></div>
           </div>
         </div>
 
@@ -175,135 +273,343 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by roll, name, or institution..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
-            />
-          </div>
-          <button
-            onClick={() => { setShowForm(true); setEditingId(null); setFormData(emptyStudent); }}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 flex items-center space-x-2 font-semibold shadow-lg transition-all"
-          >
-            <Plus className="w-5 h-5" /><span>Add Student</span>
-          </button>
+        {/* Tabs */}
+        <div className="flex space-x-1 mb-6 bg-white rounded-lg p-1 shadow-sm border">
+          {([
+            { id: 'students' as Tab, label: 'Students', icon: Users },
+            { id: 'activity' as Tab, label: 'Activity Log', icon: Activity },
+            { id: 'search-logs' as Tab, label: 'Search Logs', icon: BarChart3 },
+          ]).map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 rounded-md text-sm font-medium transition-all ${
+                activeTab === tab.id
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}>
+              <tab.icon className="w-4 h-4" />
+              <span>{tab.label}</span>
+            </button>
+          ))}
         </div>
 
-        {/* Form Modal */}
-        {showForm && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <div className="p-6 border-b flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {editingId ? 'Edit Student' : 'Add New Student'}
-                </h2>
-                <button onClick={() => { setShowForm(false); setEditingId(null); }}
-                  className="p-2 hover:bg-gray-100 rounded-full"><X className="w-5 h-5" /></button>
-              </div>
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {[
-                    { key: 'roll_number', label: 'Roll Number', placeholder: 'e.g., 230417' },
-                    { key: 'name', label: 'Full Name', placeholder: 'e.g., Sadia Islam' },
-                    { key: 'institution', label: 'Institution', placeholder: 'e.g., JU' },
-                    { key: 'building', label: 'Building', placeholder: 'e.g., Main Building' },
-                    { key: 'room', label: 'Room', placeholder: 'e.g., 506' },
-                    { key: 'floor', label: 'Floor', placeholder: 'e.g., 5th Floor' },
-                    { key: 'report_time', label: 'Report Time', placeholder: 'e.g., 10:00 AM' },
-                    { key: 'start_time', label: 'Start Time', placeholder: 'e.g., 12:00 PM' },
-                    { key: 'end_time', label: 'End Time', placeholder: 'e.g., 2:00 PM' },
-                    { key: 'map_url', label: 'Map URL', placeholder: 'https://maps.google.com/...' },
-                  ].map(field => (
-                    <div key={field.key}>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1">{field.label}</label>
-                      <input
-                        type="text"
-                        value={(formData as any)[field.key]}
-                        onChange={(e) => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
-                        placeholder={field.placeholder}
-                        required
-                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm"
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Directions</label>
-                  <textarea
-                    value={formData.directions}
-                    onChange={(e) => setFormData(prev => ({ ...prev, directions: e.target.value }))}
-                    placeholder="Enter through Gate 2 ➞ Walk to Main Building ➞ ..."
-                    required
-                    rows={3}
-                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm"
+        {/* Students Tab */}
+        {activeTab === 'students' && (
+          <>
+            {/* Toolbar */}
+            <div className="flex flex-col gap-3 mb-6">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by roll, name, or institution..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
                   />
                 </div>
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }}
-                    className="px-6 py-2 border-2 border-gray-200 rounded-lg hover:bg-gray-50 font-medium text-sm">Cancel</button>
-                  <button type="submit" disabled={saving}
-                    className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 font-medium text-sm flex items-center space-x-2 disabled:opacity-50">
-                    {saving ? <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                      : <><Save className="w-4 h-4" /><span>{editingId ? 'Update' : 'Add'}</span></>}
-                  </button>
+                <button onClick={() => setShowFilters(!showFilters)}
+                  className={`px-4 py-3 border-2 rounded-lg flex items-center space-x-2 font-medium transition-all ${
+                    showFilters || filterInstitution || filterBuilding || filterFloor
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}>
+                  <Filter className="w-5 h-5" />
+                  <span>Filters</span>
+                  {(filterInstitution || filterBuilding || filterFloor) && (
+                    <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5">
+                      {[filterInstitution, filterBuilding, filterFloor].filter(Boolean).length}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => { setShowForm(true); setEditingId(null); setFormData(emptyStudent); }}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 flex items-center space-x-2 font-semibold shadow-lg transition-all"
+                >
+                  <Plus className="w-5 h-5" /><span>Add Student</span>
+                </button>
+              </div>
+
+              {/* Advanced Filters */}
+              {showFilters && (
+                <div className="bg-white rounded-lg border p-4 flex flex-col sm:flex-row gap-3">
+                  <div className="flex-1">
+                    <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Institution</label>
+                    <select value={filterInstitution} onChange={e => setFilterInstitution(e.target.value)}
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:border-blue-500">
+                      <option value="">All Institutions</option>
+                      {institutions.map(i => <option key={i} value={i}>{i}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Building</label>
+                    <select value={filterBuilding} onChange={e => setFilterBuilding(e.target.value)}
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:border-blue-500">
+                      <option value="">All Buildings</option>
+                      {buildings.map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Floor</label>
+                    <select value={filterFloor} onChange={e => setFilterFloor(e.target.value)}
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:border-blue-500">
+                      <option value="">All Floors</option>
+                      {floors.map(f => <option key={f} value={f}>{f}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex items-end">
+                    <button onClick={() => { setFilterInstitution(''); setFilterBuilding(''); setFilterFloor(''); }}
+                      className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-medium">Clear All</button>
+                  </div>
                 </div>
-              </form>
+              )}
             </div>
+
+            {/* Showing count */}
+            <p className="text-sm text-gray-500 mb-3">
+              Showing {filteredStudents.length} of {students.length} students
+              {(filterInstitution || filterBuilding || filterFloor) && ' (filtered)'}
+            </p>
+
+            {/* Table */}
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      {['Roll', 'Name', 'Institution', 'Building', 'Room', 'Floor', 'Report', 'Actions'].map(h => (
+                        <th key={h} className="px-4 py-3 text-left font-semibold text-gray-600 uppercase tracking-wide text-xs">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {filteredStudents.map(student => (
+                      <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 font-mono font-bold text-blue-600">{student.roll_number}</td>
+                        <td className="px-4 py-3 font-medium text-gray-900">{student.name}</td>
+                        <td className="px-4 py-3 text-gray-600">{student.institution}</td>
+                        <td className="px-4 py-3 text-gray-600">{student.building}</td>
+                        <td className="px-4 py-3 font-bold">{student.room}</td>
+                        <td className="px-4 py-3 text-gray-600">{student.floor}</td>
+                        <td className="px-4 py-3 text-gray-600">{student.report_time}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center space-x-2">
+                            <button onClick={() => handleEdit(student)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDelete(student.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {filteredStudents.length === 0 && (
+                <div className="text-center py-12 text-gray-500">
+                  <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p className="font-medium">No students found</p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Activity Log Tab */}
+        {activeTab === 'activity' && (
+          <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div className="p-4 border-b bg-gray-50">
+              <h2 className="font-semibold text-gray-900 flex items-center space-x-2">
+                <Activity className="w-5 h-5 text-blue-600" />
+                <span>Recent Activity</span>
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">Last 50 admin actions</p>
+            </div>
+            {activityLogs.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p className="font-medium">No activity yet</p>
+              </div>
+            ) : (
+              <div className="divide-y">
+                {activityLogs.map(log => (
+                  <div key={log.id} className="px-4 py-3 flex items-start space-x-3 hover:bg-gray-50">
+                    <div className={`mt-1 p-1.5 rounded-full ${
+                      log.action === 'INSERT' ? 'bg-green-100' :
+                      log.action === 'UPDATE' ? 'bg-blue-100' :
+                      'bg-red-100'
+                    }`}>
+                      {log.action === 'INSERT' ? <Plus className="w-3 h-3 text-green-600" /> :
+                       log.action === 'UPDATE' ? <Pencil className="w-3 h-3 text-blue-600" /> :
+                       <Trash2 className="w-3 h-3 text-red-600" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">{log.details || `${log.action} ${log.entity_type}`}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {new Date(log.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                      log.action === 'INSERT' ? 'bg-green-100 text-green-700' :
+                      log.action === 'UPDATE' ? 'bg-blue-100 text-blue-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>{log.action}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Table */}
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  {['Roll', 'Name', 'Institution', 'Building', 'Room', 'Floor', 'Report', 'Actions'].map(h => (
-                    <th key={h} className="px-4 py-3 text-left font-semibold text-gray-600 uppercase tracking-wide text-xs">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {filteredStudents.map(student => (
-                  <tr key={student.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-mono font-bold text-blue-600">{student.roll_number}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{student.name}</td>
-                    <td className="px-4 py-3 text-gray-600">{student.institution}</td>
-                    <td className="px-4 py-3 text-gray-600">{student.building}</td>
-                    <td className="px-4 py-3 font-bold">{student.room}</td>
-                    <td className="px-4 py-3 text-gray-600">{student.floor}</td>
-                    <td className="px-4 py-3 text-gray-600">{student.report_time}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center space-x-2">
-                        <button onClick={() => handleEdit(student)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleDelete(student.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {filteredStudents.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
-              <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p className="font-medium">No students found</p>
+        {/* Search Logs Tab */}
+        {activeTab === 'search-logs' && (
+          <div className="space-y-6">
+            {/* Top Searched */}
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="p-4 border-b bg-gray-50">
+                <h2 className="font-semibold text-gray-900 flex items-center space-x-2">
+                  <TrendingUp className="w-5 h-5 text-orange-600" />
+                  <span>Top Searched Roll Numbers</span>
+                </h2>
+              </div>
+              {topSearchedList.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p className="font-medium">No searches yet</p>
+                </div>
+              ) : (
+                <div className="p-4">
+                  <div className="space-y-2">
+                    {topSearchedList.map(([roll, count], i) => {
+                      const maxCount = topSearchedList[0][1];
+                      return (
+                        <div key={roll} className="flex items-center space-x-3">
+                          <span className="text-sm font-bold text-gray-400 w-6">#{i + 1}</span>
+                          <span className="text-sm font-mono font-bold text-blue-600 w-20">{roll}</span>
+                          <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
+                            <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-full rounded-full flex items-center justify-end pr-2 transition-all"
+                              style={{ width: `${Math.max((count / maxCount) * 100, 15)}%` }}>
+                              <span className="text-xs font-bold text-white">{count}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+
+            {/* Recent Searches */}
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="p-4 border-b bg-gray-50">
+                <h2 className="font-semibold text-gray-900 flex items-center space-x-2">
+                  <Search className="w-5 h-5 text-blue-600" />
+                  <span>Recent Searches</span>
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">Last 100 searches</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-600 text-xs uppercase">Roll Number</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-600 text-xs uppercase">Found</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-600 text-xs uppercase">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {searchLogs.map(log => (
+                      <tr key={log.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 font-mono font-bold text-blue-600">{log.roll_number}</td>
+                        <td className="px-4 py-3">
+                          {log.found ? (
+                            <span className="inline-flex items-center space-x-1 text-green-700 bg-green-50 px-2 py-1 rounded-full text-xs font-semibold">
+                              <CheckCircle className="w-3 h-3" /><span>Found</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center space-x-1 text-red-700 bg-red-50 px-2 py-1 rounded-full text-xs font-semibold">
+                              <AlertCircle className="w-3 h-3" /><span>Not Found</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 text-xs">{new Date(log.created_at).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Form Modal */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">
+                {editingId ? 'Edit Student' : 'Add New Student'}
+              </h2>
+              <button onClick={() => { setShowForm(false); setEditingId(null); }}
+                className="p-2 hover:bg-gray-100 rounded-full"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  { key: 'roll_number', label: 'Roll Number', placeholder: 'e.g., 230417' },
+                  { key: 'name', label: 'Full Name', placeholder: 'e.g., Sadia Islam' },
+                  { key: 'institution', label: 'Institution', placeholder: 'e.g., JU' },
+                  { key: 'building', label: 'Building', placeholder: 'e.g., Main Building' },
+                  { key: 'room', label: 'Room', placeholder: 'e.g., 506' },
+                  { key: 'floor', label: 'Floor', placeholder: 'e.g., 5th Floor' },
+                  { key: 'report_time', label: 'Report Time', placeholder: 'e.g., 10:00 AM' },
+                  { key: 'start_time', label: 'Start Time', placeholder: 'e.g., 12:00 PM' },
+                  { key: 'end_time', label: 'End Time', placeholder: 'e.g., 2:00 PM' },
+                  { key: 'map_url', label: 'Map URL', placeholder: 'https://maps.google.com/...' },
+                ].map(field => (
+                  <div key={field.key}>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">{field.label}</label>
+                    <input
+                      type="text"
+                      value={(formData as any)[field.key]}
+                      onChange={(e) => setFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
+                      placeholder={field.placeholder}
+                      required
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Directions</label>
+                <textarea
+                  value={formData.directions}
+                  onChange={(e) => setFormData(prev => ({ ...prev, directions: e.target.value }))}
+                  placeholder="Enter through Gate 2 ➞ Walk to Main Building ➞ ..."
+                  required
+                  rows={3}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm"
+                />
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }}
+                  className="px-6 py-2 border-2 border-gray-200 rounded-lg hover:bg-gray-50 font-medium text-sm">Cancel</button>
+                <button type="submit" disabled={saving}
+                  className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 font-medium text-sm flex items-center space-x-2 disabled:opacity-50">
+                  {saving ? <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                    : <><Save className="w-4 h-4" /><span>{editingId ? 'Update' : 'Add'}</span></>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
