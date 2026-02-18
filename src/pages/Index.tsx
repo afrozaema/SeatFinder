@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Search,
   Clock,
@@ -222,18 +223,26 @@ function Index() {
 
   const loadCentersData = async () => {
     try {
-      const response = await fetch('/centers.txt');
-      const text = await response.text();
-      const lines = text.trim().split('\n').filter(line => line.trim());
-
-      const data = lines.map(line => {
-        const [roll, name, institution, building, room, floor, reportTime, startTime, endTime, directions, mapUrl] = line.split('|');
-        return { roll: roll?.trim(), name, institution, building, room, floor, reportTime, startTime, endTime, directions, mapUrl };
-      });
-
-      setCentersData(data);
+      const { data, error } = await supabase.from('students').select('*');
+      if (error) throw error;
+      if (data) {
+        const mapped = data.map(s => ({
+          roll: s.roll_number,
+          name: s.name,
+          institution: s.institution,
+          building: s.building,
+          room: s.room,
+          floor: s.floor,
+          reportTime: s.report_time,
+          startTime: s.start_time,
+          endTime: s.end_time,
+          directions: s.directions,
+          mapUrl: s.map_url,
+        }));
+        setCentersData(mapped);
+      }
     } catch (err) {
-      console.error('Error loading centers data:', err);
+      console.error('Error loading students data:', err);
     }
   };
 
