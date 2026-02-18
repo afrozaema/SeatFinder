@@ -29,6 +29,14 @@ interface StudentData {
 
 const UNITS = ['UNIT-A', 'UNIT-B', 'UNIT-C', 'UNIT-D', 'UNIT-E'] as const;
 
+const UNIT_ICONS: Record<string, React.ReactNode> = {
+  'UNIT-A': <BookOpen className="w-5 h-5" />,
+  'UNIT-B': <Target className="w-5 h-5" />,
+  'UNIT-C': <Compass className="w-5 h-5" />,
+  'UNIT-D': <Shield className="w-5 h-5" />,
+  'UNIT-E': <Star className="w-5 h-5" />,
+};
+
 const UNIT_COLORS: Record<string, { dark: string; light: string; badge: { dark: string; light: string } }> = {
   'UNIT-A': {
     dark: 'bg-gradient-to-r from-blue-600/80 to-cyan-600/80 border border-blue-400/20 hover:from-blue-500 hover:to-cyan-500',
@@ -272,9 +280,9 @@ function StudentPage() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedUnit(unit)}
-                    className={`px-6 py-3 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 shadow-md hover:shadow-lg text-white ${isDarkMode ? UNIT_COLORS[unit]?.dark : UNIT_COLORS[unit]?.light}`}
+                    className={`px-6 py-3 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 shadow-md hover:shadow-lg text-white flex items-center gap-2 ${isDarkMode ? UNIT_COLORS[unit]?.dark : UNIT_COLORS[unit]?.light}`}
                   >
-                    {unit}
+                    {UNIT_ICONS[unit]} {unit}
                   </motion.button>
                 ))}
               </div>
