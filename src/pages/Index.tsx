@@ -135,7 +135,8 @@ function Index() {
   const [error, setError] = useState('');
   const [centersData, setCentersData] = useState<StudentData[]>([]);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [examCountdown, setExamCountdown] = useState<string>('');
+  const [examCountdown, setExamCountdown] = useState<{ h: number; m: number; s: number } | null>(null);
+  const [examStarted, setExamStarted] = useState(false);
   const [batteryLevel, setBatteryLevel] = useState<number>(100);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [gender, setGender] = useState<string>('');
@@ -214,9 +215,11 @@ function Index() {
           const h = Math.floor(diff / (1000 * 60 * 60));
           const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
           const s = Math.floor((diff % (1000 * 60)) / 1000);
-          setExamCountdown(`${h}h ${m}m ${s}s`);
+          setExamCountdown({ h, m, s });
+          setExamStarted(false);
         } else {
-          setExamCountdown('Exam Started!');
+          setExamCountdown(null);
+          setExamStarted(true);
         }
       }, 1000);
       return () => clearInterval(interval);
@@ -680,9 +683,31 @@ function Index() {
                 </h3>
                 <Bell className="w-5 h-5 text-orange-500 animate-bounce" />
               </div>
-              <div className={`text-3xl sm:text-4xl font-mono font-extrabold tracking-wider ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
-                {examCountdown}
-              </div>
+              {examStarted ? (
+                <div className={`text-2xl sm:text-3xl font-bold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                  🎯 Exam Started!
+                </div>
+              ) : examCountdown ? (
+                <div className="flex items-center justify-center space-x-2 sm:space-x-3">
+                  {[
+                    { value: examCountdown.h, label: 'HRS' },
+                    { value: examCountdown.m, label: 'MIN' },
+                    { value: examCountdown.s, label: 'SEC' },
+                  ].map((unit, i) => (
+                    <React.Fragment key={unit.label}>
+                      {i > 0 && <span className={`text-2xl sm:text-3xl font-bold ${isDarkMode ? 'text-red-400' : 'text-red-500'} animate-pulse`}>:</span>}
+                      <div className={`flex flex-col items-center px-3 py-2 rounded-xl ${isDarkMode ? 'bg-white/5 border border-white/10' : 'bg-red-50 border border-red-200'}`}>
+                        <span className={`text-2xl sm:text-3xl font-mono font-extrabold tabular-nums ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                          {String(unit.value).padStart(2, '0')}
+                        </span>
+                        <span className={`text-[10px] font-bold tracking-widest ${isDarkMode ? 'text-red-400/60' : 'text-red-500/70'}`}>
+                          {unit.label}
+                        </span>
+                      </div>
+                    </React.Fragment>
+                  ))}
+                </div>
+              ) : null}
             </motion.div>
 
             {/* Exam Details - Key Info Grid */}
