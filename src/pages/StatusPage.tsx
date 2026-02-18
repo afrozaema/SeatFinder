@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   Heart, Activity, Clock, Server, Globe, Shield, Database,
-  CheckCircle, XCircle, AlertTriangle, ArrowLeft, RefreshCw, Wifi, Zap
+  CheckCircle, XCircle, AlertTriangle, ArrowLeft, RefreshCw, Wifi, Zap,
+  GraduationCap
 } from 'lucide-react';
 import {
-  BarChart, Bar, LineChart, Line, Area, AreaChart, XAxis, YAxis,
+  BarChart, Bar, AreaChart, Area, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 
@@ -58,7 +59,7 @@ function LiveTimer({ since }: { since: string }) {
     const i = setInterval(update, 1000);
     return () => clearInterval(i);
   }, [since]);
-  return <span className="font-mono text-sm text-gray-400">{elapsed}</span>;
+  return <span className="font-mono text-sm text-blue-300/80">{elapsed}</span>;
 }
 
 // ─── HeartbeatIcon ───────────────────────────────────────────
@@ -67,22 +68,27 @@ function HeartbeatIcon({ isUp }: { isUp: boolean }) {
     <motion.div
       animate={isUp ? { scale: [1, 1.2, 1] } : {}}
       transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
-      className={`p-4 rounded-full ${isUp ? 'bg-green-500/20' : 'bg-red-500/20'}`}
+      className={`p-5 rounded-full ${isUp ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 shadow-lg shadow-blue-500/10' : 'bg-red-500/20'}`}
     >
-      <Heart className={`w-10 h-10 ${isUp ? 'text-green-400 fill-green-400' : 'text-red-400 fill-red-400'}`} />
+      <Heart className={`w-12 h-12 ${isUp ? 'text-blue-400 fill-blue-400' : 'text-red-400 fill-red-400'}`} />
     </motion.div>
   );
 }
 
 // ─── ECG Line ────────────────────────────────────────────────
 function ECGLine({ isUp }: { isUp: boolean }) {
-  const color = isUp ? '#22c55e' : '#ef4444';
   return (
     <svg viewBox="0 0 400 60" className="w-full h-12 overflow-visible" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="ecgGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor={isUp ? '#3b82f6' : '#ef4444'} />
+          <stop offset="100%" stopColor={isUp ? '#a855f7' : '#ef4444'} />
+        </linearGradient>
+      </defs>
       <motion.path
         d="M0,30 L60,30 L80,30 L90,10 L100,50 L110,5 L120,55 L130,30 L150,30 L400,30"
         fill="none"
-        stroke={color}
+        stroke="url(#ecgGrad)"
         strokeWidth="2"
         strokeLinecap="round"
         initial={{ pathLength: 0, opacity: 0.3 }}
@@ -98,7 +104,6 @@ export default function StatusPage() {
   const [sslInfo, setSslInfo] = useState<SSLInfo | null>(null);
   const [sslLoading, setSslLoading] = useState(true);
 
-  // Fetch health logs
   const { data: logs = [], isLoading: logsLoading } = useQuery({
     queryKey: ['keep-alive-logs'],
     queryFn: async () => {
@@ -112,7 +117,6 @@ export default function StatusPage() {
     refetchInterval: 60000,
   });
 
-  // Fetch incidents
   const { data: incidents = [] } = useQuery({
     queryKey: ['incidents'],
     queryFn: async () => {
@@ -126,14 +130,11 @@ export default function StatusPage() {
     refetchInterval: 60000,
   });
 
-  // Check SSL
   const checkSSL = async () => {
     setSslLoading(true);
     try {
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const siteUrl = window.location.origin;
       const res = await supabase.functions.invoke('check-ssl', {
-        body: { url: siteUrl },
+        body: { url: window.location.origin },
       });
       if (res.data) setSslInfo(res.data);
     } catch {
@@ -144,11 +145,10 @@ export default function StatusPage() {
 
   useEffect(() => {
     checkSSL();
-    const i = setInterval(checkSSL, 300000); // 5 min
+    const i = setInterval(checkSSL, 300000);
     return () => clearInterval(i);
   }, []);
 
-  // Calculations
   const latest = logs[0];
   const isUp = latest?.status === 'ok';
   const totalChecks = logs.length;
@@ -156,7 +156,6 @@ export default function StatusPage() {
   const uptimePercent = totalChecks > 0 ? ((successChecks / totalChecks) * 100).toFixed(2) : '100.00';
   const avgResponseTime = totalChecks > 0 ? Math.round(logs.reduce((a, l) => a + l.response_time_ms, 0) / totalChecks) : 0;
 
-  // 30-day uptime data
   const last30Days = Array.from({ length: 30 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (29 - i));
@@ -164,57 +163,66 @@ export default function StatusPage() {
     const dayLogs = logs.filter(l => l.pinged_at.startsWith(dateStr));
     const success = dayLogs.filter(l => l.status === 'ok').length;
     const failure = dayLogs.length - success;
-    return { date: d.toLocaleDateString('en', { month: 'short', day: 'numeric' }), success, failure, total: dayLogs.length };
+    return { date: d.toLocaleDateString('en', { month: 'short', day: 'numeric' }), success, failure };
   });
 
-  // Response time chart data
   const responseTimeData = logs.slice(0, 50).reverse().map(l => ({
     time: new Date(l.pinged_at).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }),
     ms: l.response_time_ms,
   }));
 
   const recentLogs = logs.slice(0, 20);
-
   const services = [
     { name: 'Database', icon: Database, status: isUp, detail: latest ? `${latest.response_time_ms}ms` : '-' },
     { name: 'API Server', icon: Server, status: isUp, detail: isUp ? 'Responding' : 'Down' },
     { name: 'Website', icon: Globe, status: sslInfo?.valid ?? true, detail: sslInfo?.valid ? 'Secure' : 'Issue' },
   ];
-
   const activeIncidents = incidents.filter(i => i.status !== 'resolved');
 
   if (logsLoading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center">
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-          <RefreshCw className="w-8 h-8 text-gray-500" />
+          <RefreshCw className="w-8 h-8 text-blue-500" />
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* Back link */}
-        <Link to="/" className="inline-flex items-center space-x-2 text-gray-400 hover:text-white mb-8 transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-medium">Back to Home</span>
-        </Link>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-purple-950 text-gray-100 floating-dots floating-dots-dark">
+      {/* Header */}
+      <div className="bg-white/5 backdrop-blur-md border-b border-white/10">
+        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+          <Link to="/" className="inline-flex items-center space-x-2 text-blue-300 hover:text-white transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm font-medium">Back to Home</span>
+          </Link>
+          <div className="flex items-center space-x-2">
+            <div className="p-1.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full">
+              <GraduationCap className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-sm font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              JU SeatFinder
+            </span>
+          </div>
+        </div>
+      </div>
 
+      <div className="max-w-2xl mx-auto px-4 py-8">
         {/* ─── Hero Status Card ─────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className={`rounded-2xl border p-8 mb-8 relative overflow-hidden ${
             isUp
-              ? 'bg-gradient-to-br from-gray-900 to-green-950/30 border-green-800/50'
-              : 'bg-gradient-to-br from-gray-900 to-red-950/30 border-red-800/50'
+              ? 'bg-gradient-to-br from-blue-900/40 to-purple-900/30 border-blue-500/30 shadow-xl shadow-blue-500/5'
+              : 'bg-gradient-to-br from-red-900/40 to-red-950/30 border-red-500/30'
           }`}
         >
           <div className="flex flex-col items-center text-center space-y-4 relative z-10">
             <HeartbeatIcon isUp={isUp} />
-            <h1 className="text-3xl font-bold">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
               {activeIncidents.length > 0
                 ? 'System Issues Detected'
                 : isUp ? 'All Systems Operational' : 'System Down'}
@@ -229,40 +237,40 @@ export default function StatusPage() {
         {/* ─── Stats Grid ──────────────────────────────────── */}
         <div className="grid grid-cols-3 gap-4 mb-8">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="rounded-xl border border-green-800/40 bg-gradient-to-br from-green-900/30 to-gray-900 p-4 text-center">
-            <p className="text-3xl font-bold text-green-400">{uptimePercent}%</p>
-            <p className="text-xs text-gray-400 mt-1 uppercase tracking-wide">Uptime</p>
+            className="rounded-xl border border-blue-500/20 bg-gradient-to-br from-blue-900/30 to-blue-950/50 p-4 text-center backdrop-blur-sm">
+            <p className="text-3xl font-bold text-blue-400">{uptimePercent}%</p>
+            <p className="text-xs text-blue-300/60 mt-1 uppercase tracking-wide font-semibold">Uptime</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            className="rounded-xl border border-blue-800/40 bg-gradient-to-br from-blue-900/30 to-gray-900 p-4 text-center">
-            <p className="text-3xl font-bold text-blue-400">{avgResponseTime}<span className="text-lg">ms</span></p>
-            <p className="text-xs text-gray-400 mt-1 uppercase tracking-wide">Avg Response</p>
+            className="rounded-xl border border-purple-500/20 bg-gradient-to-br from-purple-900/30 to-purple-950/50 p-4 text-center backdrop-blur-sm">
+            <p className="text-3xl font-bold text-purple-400">{avgResponseTime}<span className="text-lg">ms</span></p>
+            <p className="text-xs text-purple-300/60 mt-1 uppercase tracking-wide font-semibold">Avg Response</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-            className="rounded-xl border border-purple-800/40 bg-gradient-to-br from-purple-900/30 to-gray-900 p-4 text-center">
-            <p className="text-3xl font-bold text-purple-400">{totalChecks}</p>
-            <p className="text-xs text-gray-400 mt-1 uppercase tracking-wide">Total Checks</p>
+            className="rounded-xl border border-pink-500/20 bg-gradient-to-br from-pink-900/30 to-pink-950/50 p-4 text-center backdrop-blur-sm">
+            <p className="text-3xl font-bold text-pink-400">{totalChecks}</p>
+            <p className="text-xs text-pink-300/60 mt-1 uppercase tracking-wide font-semibold">Total Checks</p>
           </motion.div>
         </div>
 
         {/* ─── Service Status ──────────────────────────────── */}
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 mb-8 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-800">
+        <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm mb-8 overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/10">
             <h2 className="font-semibold flex items-center space-x-2">
               <Activity className="w-5 h-5 text-blue-400" />
               <span>Service Status</span>
             </h2>
           </div>
-          <div className="divide-y divide-gray-800">
+          <div className="divide-y divide-white/5">
             {services.map(svc => (
               <div key={svc.name} className="px-5 py-4 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <svc.icon className="w-5 h-5 text-gray-400" />
+                  <svc.icon className="w-5 h-5 text-blue-300/60" />
                   <span className="font-medium">{svc.name}</span>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <span className="text-sm text-gray-400 font-mono">{svc.detail}</span>
-                  <div className={`w-3 h-3 rounded-full ${svc.status ? 'bg-green-400' : 'bg-red-400'}`} />
+                  <span className="text-sm text-blue-300/60 font-mono">{svc.detail}</span>
+                  <div className={`w-3 h-3 rounded-full ${svc.status ? 'bg-green-400 shadow-lg shadow-green-400/30' : 'bg-red-400 shadow-lg shadow-red-400/30'}`} />
                   <span className={`text-xs font-semibold ${svc.status ? 'text-green-400' : 'text-red-400'}`}>
                     {svc.status ? 'Operational' : 'Down'}
                   </span>
@@ -273,8 +281,8 @@ export default function StatusPage() {
         </div>
 
         {/* ─── Uptime Graph ────────────────────────────────── */}
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 mb-8 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-800">
+        <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm mb-8 overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/10">
             <h2 className="font-semibold flex items-center space-x-2">
               <Zap className="w-5 h-5 text-yellow-400" />
               <span>30-Day Uptime</span>
@@ -283,14 +291,14 @@ export default function StatusPage() {
           <div className="p-4 h-48">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={last30Days}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9ca3af' }} interval={4} />
-                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'rgba(147,197,253,0.5)' }} interval={4} />
+                <YAxis tick={{ fontSize: 10, fill: 'rgba(147,197,253,0.5)' }} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }}
-                  labelStyle={{ color: '#e5e7eb' }}
+                  contentStyle={{ backgroundColor: 'rgba(15,23,42,0.95)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 8, fontSize: 12, color: '#e2e8f0' }}
+                  labelStyle={{ color: '#93c5fd' }}
                 />
-                <Bar dataKey="success" fill="#22c55e" radius={[2, 2, 0, 0]} name="Success" />
+                <Bar dataKey="success" fill="#3b82f6" radius={[2, 2, 0, 0]} name="Success" />
                 <Bar dataKey="failure" fill="#ef4444" radius={[2, 2, 0, 0]} name="Failure" />
               </BarChart>
             </ResponsiveContainer>
@@ -298,10 +306,10 @@ export default function StatusPage() {
         </div>
 
         {/* ─── Response Time Graph ─────────────────────────── */}
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 mb-8 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-800">
+        <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm mb-8 overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/10">
             <h2 className="font-semibold flex items-center space-x-2">
-              <Clock className="w-5 h-5 text-cyan-400" />
+              <Clock className="w-5 h-5 text-purple-400" />
               <span>Response Time Trend</span>
             </h2>
           </div>
@@ -310,25 +318,25 @@ export default function StatusPage() {
               <AreaChart data={responseTimeData}>
                 <defs>
                   <linearGradient id="responseGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.4} />
+                    <stop offset="0%" stopColor="#a855f7" stopOpacity={0.4} />
                     <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#9ca3af' }} interval={Math.floor(responseTimeData.length / 6)} />
-                <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} unit="ms" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <XAxis dataKey="time" tick={{ fontSize: 10, fill: 'rgba(147,197,253,0.5)' }} interval={Math.max(1, Math.floor(responseTimeData.length / 6))} />
+                <YAxis tick={{ fontSize: 10, fill: 'rgba(147,197,253,0.5)' }} unit="ms" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: 8, fontSize: 12 }}
+                  contentStyle={{ backgroundColor: 'rgba(15,23,42,0.95)', border: '1px solid rgba(168,85,247,0.3)', borderRadius: 8, fontSize: 12, color: '#e2e8f0' }}
                 />
-                <Area type="monotone" dataKey="ms" stroke="#3b82f6" fill="url(#responseGrad)" strokeWidth={2} name="Response Time" />
+                <Area type="monotone" dataKey="ms" stroke="#a855f7" fill="url(#responseGrad)" strokeWidth={2} name="Response Time" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* ─── SSL Certificate ─────────────────────────────── */}
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 mb-8 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-800">
+        <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm mb-8 overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/10">
             <h2 className="font-semibold flex items-center space-x-2">
               <Shield className="w-5 h-5 text-green-400" />
               <span>SSL Certificate</span>
@@ -337,76 +345,72 @@ export default function StatusPage() {
           <div className="p-5">
             {sslLoading ? (
               <div className="flex items-center justify-center py-6">
-                <RefreshCw className="w-5 h-5 text-gray-500 animate-spin" />
+                <RefreshCw className="w-5 h-5 text-blue-400 animate-spin" />
               </div>
             ) : sslInfo ? (
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Status</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${sslInfo.valid ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                    {sslInfo.valid ? '✓ Valid' : '✗ Invalid'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Hostname</span>
-                  <span className="text-sm font-mono">{sslInfo.hostname}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Issuer</span>
-                  <span className="text-sm">{sslInfo.issuer}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Protocol</span>
-                  <span className="text-sm font-mono">{sslInfo.protocol}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Last Checked</span>
-                  <span className="text-xs font-mono text-gray-500">
-                    {new Date(sslInfo.checked_at).toLocaleString()}
-                  </span>
-                </div>
+                {[
+                  { label: 'Status', value: null, badge: true },
+                  { label: 'Hostname', value: sslInfo.hostname, mono: true },
+                  { label: 'Issuer', value: sslInfo.issuer },
+                  { label: 'Protocol', value: sslInfo.protocol, mono: true },
+                  { label: 'Last Checked', value: new Date(sslInfo.checked_at).toLocaleString(), small: true },
+                ].map(item => (
+                  <div key={item.label} className="flex items-center justify-between">
+                    <span className="text-sm text-blue-300/60">{item.label}</span>
+                    {item.badge ? (
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${sslInfo.valid ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
+                        {sslInfo.valid ? '✓ Valid' : '✗ Invalid'}
+                      </span>
+                    ) : (
+                      <span className={`text-sm ${item.mono ? 'font-mono' : ''} ${item.small ? 'text-xs text-blue-300/40 font-mono' : 'text-blue-100'}`}>
+                        {item.value}
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-sm text-center">Unable to check SSL</p>
+              <p className="text-blue-300/40 text-sm text-center">Unable to check SSL</p>
             )}
           </div>
         </div>
 
         {/* ─── Incident History ─────────────────────────────── */}
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 mb-8 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-800">
+        <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm mb-8 overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/10">
             <h2 className="font-semibold flex items-center space-x-2">
               <AlertTriangle className="w-5 h-5 text-orange-400" />
               <span>Incident History</span>
             </h2>
           </div>
           {incidents.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-gray-500">
-              <CheckCircle className="w-10 h-10 mb-2 text-green-500/50" />
-              <p className="text-sm">All systems running smoothly</p>
-              <p className="text-xs text-gray-600 mt-1">No incidents reported</p>
+            <div className="flex flex-col items-center justify-center py-10">
+              <CheckCircle className="w-10 h-10 mb-2 text-blue-500/30" />
+              <p className="text-sm text-blue-200/60">All systems running smoothly</p>
+              <p className="text-xs text-blue-300/30 mt-1">No incidents reported</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-800">
+            <div className="divide-y divide-white/5">
               {incidents.map(inc => (
                 <div key={inc.id} className="px-5 py-4">
                   <div className="flex items-start justify-between mb-1">
                     <h3 className="font-medium text-sm">{inc.title}</h3>
                     <div className="flex items-center space-x-2">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                        inc.severity === 'critical' ? 'bg-red-500/20 text-red-400' :
-                        inc.severity === 'major' ? 'bg-orange-500/20 text-orange-400' :
-                        'bg-yellow-500/20 text-yellow-400'
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                        inc.severity === 'critical' ? 'bg-red-500/15 text-red-400 border-red-500/30' :
+                        inc.severity === 'major' ? 'bg-orange-500/15 text-orange-400 border-orange-500/30' :
+                        'bg-yellow-500/15 text-yellow-400 border-yellow-500/30'
                       }`}>{inc.severity}</span>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                        inc.status === 'resolved' ? 'bg-green-500/20 text-green-400' :
-                        inc.status === 'monitoring' ? 'bg-blue-500/20 text-blue-400' :
-                        'bg-orange-500/20 text-orange-400'
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                        inc.status === 'resolved' ? 'bg-green-500/15 text-green-400 border-green-500/30' :
+                        inc.status === 'monitoring' ? 'bg-blue-500/15 text-blue-400 border-blue-500/30' :
+                        'bg-orange-500/15 text-orange-400 border-orange-500/30'
                       }`}>{inc.status}</span>
                     </div>
                   </div>
-                  {inc.description && <p className="text-xs text-gray-400">{inc.description}</p>}
-                  <p className="text-xs text-gray-600 font-mono mt-1">
+                  {inc.description && <p className="text-xs text-blue-300/40">{inc.description}</p>}
+                  <p className="text-xs text-blue-300/30 font-mono mt-1">
                     {new Date(inc.started_at).toLocaleString()}
                     {inc.resolved_at && ` → ${new Date(inc.resolved_at).toLocaleString()}`}
                   </p>
@@ -417,32 +421,32 @@ export default function StatusPage() {
         </div>
 
         {/* ─── Recent Checks Log ───────────────────────────── */}
-        <div className="rounded-xl border border-gray-800 bg-gray-900/50 mb-8 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-800">
+        <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm mb-8 overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/10">
             <h2 className="font-semibold flex items-center space-x-2">
               <Wifi className="w-5 h-5 text-blue-400" />
               <span>Recent Checks</span>
             </h2>
           </div>
           {recentLogs.length === 0 ? (
-            <div className="text-center py-10 text-gray-500 text-sm">No checks recorded yet</div>
+            <div className="text-center py-10 text-blue-300/40 text-sm">No checks recorded yet</div>
           ) : (
-            <div className="max-h-80 overflow-y-auto divide-y divide-gray-800/50">
+            <div className="max-h-80 overflow-y-auto divide-y divide-white/5">
               {recentLogs.map(log => (
-                <div key={log.id} className="px-5 py-3 flex items-center justify-between hover:bg-gray-800/30 transition-colors">
+                <div key={log.id} className="px-5 py-3 flex items-center justify-between hover:bg-white/5 transition-colors">
                   <div className="flex items-center space-x-3">
                     {log.status === 'ok'
                       ? <CheckCircle className="w-4 h-4 text-green-400" />
                       : <XCircle className="w-4 h-4 text-red-400" />}
-                    <span className="text-xs font-mono text-gray-400">
+                    <span className="text-xs font-mono text-blue-300/50">
                       {new Date(log.pinged_at).toLocaleString()}
                     </span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                      log.status === 'ok' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                      log.status === 'ok' ? 'bg-green-500/15 text-green-400 border-green-500/30' : 'bg-red-500/15 text-red-400 border-red-500/30'
                     }`}>{log.status === 'ok' ? 'OK' : 'ERROR'}</span>
-                    <span className="text-xs font-mono text-gray-500">{log.response_time_ms}ms</span>
+                    <span className="text-xs font-mono text-purple-300/60">{log.response_time_ms}ms</span>
                   </div>
                 </div>
               ))}
@@ -451,8 +455,8 @@ export default function StatusPage() {
         </div>
 
         {/* Footer */}
-        <div className="text-center py-6 text-xs text-gray-600">
-          Auto-refreshes every 60 seconds • Powered by JU SeatFinder
+        <div className="text-center py-6 text-xs text-blue-300/30">
+          Auto-refreshes every 60 seconds • Powered by <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent font-semibold">JU SeatFinder</span>
         </div>
       </div>
     </div>
