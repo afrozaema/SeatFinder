@@ -1,84 +1,119 @@
-# JU SeatFinder
+<div align="center">
 
-A web application for Jahangirnagar University (JU) students and teachers to find exam seat allocations, teacher information, and monitor system status.
+# 🎯 JU SeatFinder
 
-## Features
+### _Find Your Exam Seat. Find Your Teacher. Stay Informed._
+
+[![Built with Lovable](https://img.shields.io/badge/Built%20with-Lovable-ff69b4?style=for-the-badge)](https://lovable.dev)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
+
+<br/>
+
+> 🌙 **Dark-themed** glassmorphism UI with blue-purple gradients, floating dot animations, and smooth Framer Motion transitions.
+
+---
+
+</div>
+
+## ✨ Features
 
 ### 🎓 Student Seat Finder
-- Search exam seat allocation by roll number
-- View exam details: date, time, building, floor, room
-- Google Maps integration for navigation to exam centers
-- Exam day checklist (what to bring / what not to bring)
-- Live exam countdown timer
-- Motivational quotes and AI assistant (Ema) advice
+> Search your exam seat in seconds — just enter your roll number!
+- 📍 Exam details: date, time, building, floor, room
+- 🗺️ Google Maps navigation to exam centers
+- ✅ Exam day checklist (what to bring / avoid)
+- ⏳ Live countdown timer to exam
+- 💬 Motivational quotes & Ema AI advice
 
 ### 👩‍🏫 Teacher Directory
-- Search teachers by name or ID
-- View teacher profiles: department, designation, phone, email, office room
-- Dark/light theme toggle
+> Find any teacher by name or ID instantly
+- 🔍 Smart search with fuzzy matching
+- 📋 Full profile: department, designation, phone, email, office
+- 🌗 Dark / Light theme toggle
 
 ### 📊 Admin Dashboard
-- Secure admin login with role-based access control
-- Manage students and teachers (CRUD operations)
-- Activity logs for all admin actions
-- Search logs with analytics
-- Analytics tab with visual charts (search trends, data distribution)
-- Advanced filtering by institution, building, floor
+> Powerful management panel for administrators
+- 🔐 Secure role-based login (admin / super_admin)
+- 📝 Full CRUD for students & teachers
+- 📈 Analytics with visual charts (Recharts)
+- 📜 Activity logs & search logs
+- 🔎 Advanced filters: institution, building, floor
 
 ### 📡 Status Page
-- Real-time system health monitoring
-- Uptime percentage and response time charts
-- SSL certificate status checker
-- Incident history and tracking
-- Keep-alive monitoring with auto-refresh
+> Real-time system health at a glance
+- 💚 Uptime % & response time graphs
+- 🔒 SSL certificate monitoring
+- 🚨 Incident history & tracking
+- 🔄 Auto-refresh every 60 seconds
 
-### 🔐 Authentication
-- Email/password admin authentication
-- Role-based access control (admin, super_admin)
-- Protected admin routes
+---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-- **Frontend:** React, TypeScript, Vite, Tailwind CSS
-- **UI Components:** shadcn/ui, Radix UI
-- **Animations:** Framer Motion
-- **Charts:** Recharts
-- **Backend:** Lovable Cloud (Supabase)
-- **Routing:** React Router v6
-- **State Management:** TanStack React Query
+| Layer | Technology |
+|:------|:-----------|
+| ⚛️ **Frontend** | React 18, TypeScript, Vite |
+| 🎨 **Styling** | Tailwind CSS, shadcn/ui, Radix UI |
+| 🎬 **Animations** | Framer Motion |
+| 📊 **Charts** | Recharts |
+| ☁️ **Backend** | Lovable Cloud |
+| 🧭 **Routing** | React Router v6 |
+| 📦 **State** | TanStack React Query |
 
-## Pages
+---
 
-| Route | Description |
-|-------|-------------|
-| `/` | Landing page with navigation |
-| `/student` | Student seat finder |
-| `/teacher` | Teacher directory search |
-| `/admin/login` | Admin login |
-| `/admin` | Admin dashboard (protected) |
-| `/status` | System status page |
+## 🗺️ Routes
 
-## Getting Started
+| Route | Page | Access |
+|:------|:-----|:-------|
+| `/` | 🏠 Landing Page | Public |
+| `/student` | 🎓 Seat Finder | Public |
+| `/teacher` | 👩‍🏫 Teacher Search | Public |
+| `/admin/login` | 🔑 Admin Login | Public |
+| `/admin` | 📊 Dashboard | 🔒 Admin Only |
+| `/status` | 📡 System Status | Public |
 
-```sh
+---
+
+## 🚀 Getting Started
+
+```bash
 # Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Navigate to the project directory
+# Navigate to project
 cd <YOUR_PROJECT_NAME>
 
 # Install dependencies
-npm i
+npm install
 
-# Start the development server
+# Start dev server
 npm run dev
 ```
 
-## Deployment
+---
 
-Open [Lovable](https://lovable.dev) and click on Share → Publish.
+## 🌐 Deployment
 
-## Custom Domain
+> Open [Lovable](https://lovable.dev) → **Share** → **Publish** 🚀
 
-Navigate to Project → Settings → Domains → Connect Domain.  
-[Learn more](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
+
+## 🔗 Custom Domain
+
+> Project → **Settings** → **Domains** → **Connect Domain**
+
+📖 [Learn more](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+---
+
+<div align="center">
+
+### 💜 Made with love for Jahangirnagar University
+
+_© 2025 JU SeatFinder_
+
+</div>
