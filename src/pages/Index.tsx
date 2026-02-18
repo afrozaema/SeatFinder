@@ -765,7 +765,7 @@ function Index() {
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-fit mx-auto">
                   <a href={studentData.mapUrl} target="_blank" rel="noopener noreferrer"
                     className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 text-sm font-bold">
                     <Eye className="w-4 h-4" /><span>View Full Map</span><ExternalLink className="w-3 h-3" />
