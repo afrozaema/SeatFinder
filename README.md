@@ -189,24 +189,6 @@ supabase/
 
 ---
 
-## 🚀 Getting Started
-
-```bash
-# Clone the repository
-git clone <YOUR_GIT_URL>
-
-# Navigate to project
-cd <YOUR_PROJECT_NAME>
-
-# Install dependencies
-npm install
-
-# Start dev server
-npm run dev
-```
-
----
-
 
 
 ## 👩‍💻 Author
