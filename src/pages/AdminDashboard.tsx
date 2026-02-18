@@ -5,8 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   GraduationCap, LogOut, Plus, Pencil, Trash2, Search, Users,
   Building, MapPin, Clock, Save, X, AlertCircle, CheckCircle,
-  Activity, BarChart3, Filter, ChevronDown, Eye, TrendingUp, UserCheck, Mail, Phone, Briefcase
+  Activity, BarChart3, Filter, ChevronDown, Eye, TrendingUp, UserCheck, Mail, Phone, Briefcase, PieChart
 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 
 interface Student {
   id: string;
@@ -60,7 +61,7 @@ const emptyTeacher = {
   teacher_id: '', name: '', department: '', designation: '', email: '', phone: '', office_room: ''
 };
 
-type Tab = 'students' | 'teachers' | 'activity' | 'search-logs';
+type Tab = 'students' | 'teachers' | 'activity' | 'search-logs' | 'analytics';
 
 export default function AdminDashboard() {
   const { user, isAdmin, loading: authLoading, adminLoading, signOut } = useAuth();
@@ -378,6 +379,7 @@ export default function AdminDashboard() {
             { id: 'teachers' as Tab, label: 'Teachers', icon: UserCheck },
             { id: 'activity' as Tab, label: 'Activity', icon: Activity },
             { id: 'search-logs' as Tab, label: 'Search Logs', icon: BarChart3 },
+            { id: 'analytics' as Tab, label: 'Analytics', icon: PieChart },
           ]).map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 rounded-md text-sm font-medium transition-all ${
@@ -716,6 +718,153 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (() => {
+          const COLORS = ['#3b82f6', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1'];
+
+          // Institution distribution
+          const institutionData = Object.entries(
+            students.reduce((acc, s) => { acc[s.institution] = (acc[s.institution] || 0) + 1; return acc; }, {} as Record<string, number>)
+          ).map(([name, value]) => ({ name, value }));
+
+          // Department distribution
+          const departmentData = Object.entries(
+            teachers.reduce((acc, t) => { acc[t.department || 'Unknown'] = (acc[t.department || 'Unknown'] || 0) + 1; return acc; }, {} as Record<string, number>)
+          ).map(([name, value]) => ({ name, value }));
+
+          // Search trends by day (last 7 days)
+          const searchByDay: Record<string, { total: number; found: number }> = {};
+          searchLogs.forEach(log => {
+            const day = new Date(log.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            if (!searchByDay[day]) searchByDay[day] = { total: 0, found: 0 };
+            searchByDay[day].total++;
+            if (log.found) searchByDay[day].found++;
+          });
+          const searchTrendData = Object.entries(searchByDay).reverse().map(([day, d]) => ({
+            day, total: d.total, found: d.found, notFound: d.total - d.found
+          }));
+
+          // Activity by type
+          const activityByType = Object.entries(
+            activityLogs.reduce((acc, l) => { acc[l.action] = (acc[l.action] || 0) + 1; return acc; }, {} as Record<string, number>)
+          ).map(([name, value]) => ({ name, value }));
+
+          // Building distribution
+          const buildingData = Object.entries(
+            students.reduce((acc, s) => { acc[s.building] = (acc[s.building] || 0) + 1; return acc; }, {} as Record<string, number>)
+          ).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 8);
+
+          return (
+            <div className="space-y-6">
+              {/* Search Trends */}
+              <div className="bg-white rounded-xl shadow-sm border p-6">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                  <span>Search Trends</span>
+                </h3>
+                {searchTrendData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={searchTrendData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="day" fontSize={12} />
+                      <YAxis fontSize={12} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="found" name="Found" fill="#10b981" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="notFound" name="Not Found" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-gray-500 text-center py-8">No search data available</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Institution Pie */}
+                <div className="bg-white rounded-xl shadow-sm border p-6">
+                  <h3 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                    <Building className="w-5 h-5 text-green-600" />
+                    <span>Students by Institution</span>
+                  </h3>
+                  {institutionData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={250}>
+                      <RePieChart>
+                        <Pie data={institutionData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                          {institutionData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip />
+                      </RePieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">No student data</p>
+                  )}
+                </div>
+
+                {/* Department Pie */}
+                <div className="bg-white rounded-xl shadow-sm border p-6">
+                  <h3 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                    <Briefcase className="w-5 h-5 text-purple-600" />
+                    <span>Teachers by Department</span>
+                  </h3>
+                  {departmentData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={250}>
+                      <RePieChart>
+                        <Pie data={departmentData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                          {departmentData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip />
+                      </RePieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">No teacher data</p>
+                  )}
+                </div>
+
+                {/* Building Bar */}
+                <div className="bg-white rounded-xl shadow-sm border p-6">
+                  <h3 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                    <MapPin className="w-5 h-5 text-orange-600" />
+                    <span>Students by Building</span>
+                  </h3>
+                  {buildingData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={250}>
+                      <BarChart data={buildingData} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis type="number" fontSize={12} />
+                        <YAxis dataKey="name" type="category" fontSize={11} width={100} />
+                        <Tooltip />
+                        <Bar dataKey="count" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">No building data</p>
+                  )}
+                </div>
+
+                {/* Activity by Type */}
+                <div className="bg-white rounded-xl shadow-sm border p-6">
+                  <h3 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                    <Activity className="w-5 h-5 text-blue-600" />
+                    <span>Activity by Action</span>
+                  </h3>
+                  {activityByType.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={250}>
+                      <RePieChart>
+                        <Pie data={activityByType} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, value }) => `${name} (${value})`}>
+                          {activityByType.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip />
+                      </RePieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">No activity data</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Student Form Modal */}
