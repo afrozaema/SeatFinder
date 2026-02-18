@@ -23,6 +23,7 @@ interface StudentData {
   endTime: string;
   directions: string;
   mapUrl: string;
+  examDate: string;
 }
 
 interface Quote {
@@ -110,14 +111,16 @@ function StudentPage() {
   useEffect(() => {
     if (studentData) {
       const interval = setInterval(() => {
-        const examDate = new Date();
-        examDate.setDate(examDate.getDate() + 1);
-        const [time, period] = studentData.reportTime.split(' ');
+        // Use the actual exam_date + start_time for countdown
+        const [time, period] = studentData.startTime.split(' ');
         const [hours, minutes] = time.split(':').map(Number);
         let hour24 = hours;
         if (period === 'PM' && hours !== 12) hour24 += 12;
         if (period === 'AM' && hours === 12) hour24 = 0;
+
+        const examDate = new Date(studentData.examDate + 'T00:00:00');
         examDate.setHours(hour24, minutes, 0, 0);
+
         const now = new Date();
         const diff = examDate.getTime() - now.getTime();
         if (diff > 0) {
@@ -141,6 +144,7 @@ function StudentPage() {
           roll: s.roll_number, name: s.name, institution: s.institution, building: s.building,
           room: s.room, floor: s.floor, reportTime: s.report_time, startTime: s.start_time,
           endTime: s.end_time, directions: s.directions, mapUrl: s.map_url,
+          examDate: (s as any).exam_date || new Date().toISOString().split('T')[0],
         })));
       }
     } catch (err) { console.error('Error loading students data:', err); }
@@ -316,8 +320,9 @@ function StudentPage() {
                   <CheckCircle className="w-3 h-3" /> Confirmed
                 </div>
               </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                 {[
+                  { icon: <Calendar className="w-5 h-5" />, label: 'Date', value: new Date(studentData.examDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), sub: new Date(studentData.examDate).toLocaleDateString('en-US', { weekday: 'long' }), gradient: isDarkMode ? 'from-pink-500/15 to-rose-500/10' : 'from-pink-50 to-rose-50', border: isDarkMode ? 'border-pink-500/20' : 'border-pink-200', iconColor: 'text-pink-500', labelColor: isDarkMode ? 'text-pink-400' : 'text-pink-700', valueColor: isDarkMode ? 'text-white' : 'text-pink-900', subColor: isDarkMode ? 'text-pink-400/70' : 'text-pink-600' },
                   { icon: <Building className="w-5 h-5" />, label: 'Room', value: studentData.room, sub: studentData.floor, gradient: isDarkMode ? 'from-emerald-500/15 to-teal-500/10' : 'from-emerald-50 to-teal-50', border: isDarkMode ? 'border-emerald-500/20' : 'border-emerald-200', iconColor: 'text-emerald-500', labelColor: isDarkMode ? 'text-emerald-400' : 'text-emerald-700', valueColor: isDarkMode ? 'text-white' : 'text-emerald-900', subColor: isDarkMode ? 'text-emerald-400/70' : 'text-emerald-600' },
                   { icon: <Clock className="w-5 h-5" />, label: 'Report', value: studentData.reportTime, sub: 'Be punctual!', gradient: isDarkMode ? 'from-blue-500/15 to-cyan-500/10' : 'from-blue-50 to-cyan-50', border: isDarkMode ? 'border-blue-500/20' : 'border-blue-200', iconColor: 'text-blue-500', labelColor: isDarkMode ? 'text-blue-400' : 'text-blue-700', valueColor: isDarkMode ? 'text-white' : 'text-blue-900', subColor: isDarkMode ? 'text-blue-400/70' : 'text-blue-600' },
                   { icon: <Timer className="w-5 h-5" />, label: 'Start', value: studentData.startTime, sub: 'Exam begins', gradient: isDarkMode ? 'from-purple-500/15 to-indigo-500/10' : 'from-purple-50 to-indigo-50', border: isDarkMode ? 'border-purple-500/20' : 'border-purple-200', iconColor: 'text-purple-500', labelColor: isDarkMode ? 'text-purple-400' : 'text-purple-700', valueColor: isDarkMode ? 'text-white' : 'text-purple-900', subColor: isDarkMode ? 'text-purple-400/70' : 'text-purple-600' },
