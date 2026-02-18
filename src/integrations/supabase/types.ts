@@ -155,6 +155,7 @@ export type Database = {
           created_at: string
           directions: string
           end_time: string
+          exam_date: string
           floor: string
           id: string
           institution: string
@@ -171,6 +172,7 @@ export type Database = {
           created_at?: string
           directions: string
           end_time: string
+          exam_date?: string
           floor: string
           id?: string
           institution: string
@@ -187,6 +189,7 @@ export type Database = {
           created_at?: string
           directions?: string
           end_time?: string
+          exam_date?: string
           floor?: string
           id?: string
           institution?: string
