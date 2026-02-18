@@ -29,6 +29,34 @@ interface StudentData {
 
 const UNITS = ['UNIT-A', 'UNIT-B', 'UNIT-C', 'UNIT-D', 'UNIT-E'] as const;
 
+const UNIT_COLORS: Record<string, { dark: string; light: string; badge: { dark: string; light: string } }> = {
+  'UNIT-A': {
+    dark: 'bg-gradient-to-r from-blue-600/80 to-cyan-600/80 border border-blue-400/20 hover:from-blue-500 hover:to-cyan-500',
+    light: 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600',
+    badge: { dark: 'bg-blue-500/20 text-blue-300 border border-blue-500/30', light: 'bg-blue-100 text-blue-700 border border-blue-200' },
+  },
+  'UNIT-B': {
+    dark: 'bg-gradient-to-r from-emerald-600/80 to-teal-600/80 border border-emerald-400/20 hover:from-emerald-500 hover:to-teal-500',
+    light: 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600',
+    badge: { dark: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30', light: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
+  },
+  'UNIT-C': {
+    dark: 'bg-gradient-to-r from-orange-600/80 to-amber-600/80 border border-orange-400/20 hover:from-orange-500 hover:to-amber-500',
+    light: 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600',
+    badge: { dark: 'bg-orange-500/20 text-orange-300 border border-orange-500/30', light: 'bg-orange-100 text-orange-700 border border-orange-200' },
+  },
+  'UNIT-D': {
+    dark: 'bg-gradient-to-r from-rose-600/80 to-pink-600/80 border border-rose-400/20 hover:from-rose-500 hover:to-pink-500',
+    light: 'bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600',
+    badge: { dark: 'bg-rose-500/20 text-rose-300 border border-rose-500/30', light: 'bg-rose-100 text-rose-700 border border-rose-200' },
+  },
+  'UNIT-E': {
+    dark: 'bg-gradient-to-r from-violet-600/80 to-purple-600/80 border border-violet-400/20 hover:from-violet-500 hover:to-purple-500',
+    light: 'bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600',
+    badge: { dark: 'bg-violet-500/20 text-violet-300 border border-violet-500/30', light: 'bg-violet-100 text-violet-700 border border-violet-200' },
+  },
+};
+
 interface Quote {
   content: string;
   author: string;
@@ -244,7 +272,7 @@ function StudentPage() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedUnit(unit)}
-                    className={`px-6 py-3 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 shadow-md hover:shadow-lg ${isDarkMode ? 'bg-gradient-to-r from-blue-600/80 to-purple-600/80 text-white border border-white/10 hover:from-blue-500 hover:to-purple-500' : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700'}`}
+                    className={`px-6 py-3 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 shadow-md hover:shadow-lg text-white ${isDarkMode ? UNIT_COLORS[unit]?.dark : UNIT_COLORS[unit]?.light}`}
                   >
                     {unit}
                   </motion.button>
@@ -260,7 +288,7 @@ function StudentPage() {
                 className={`flex items-center space-x-1 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${isDarkMode ? 'text-gray-400 hover:bg-white/10' : 'text-gray-600 hover:bg-gray-100'}`}>
                 <ArrowLeft className="w-4 h-4" /><span>Change Unit</span>
               </button>
-              <span className={`px-4 py-2 rounded-xl text-sm font-bold ${isDarkMode ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'bg-blue-100 text-blue-700 border border-blue-200'}`}>
+              <span className={`px-4 py-2 rounded-xl text-sm font-bold ${isDarkMode ? UNIT_COLORS[selectedUnit]?.badge.dark : UNIT_COLORS[selectedUnit]?.badge.light}`}>
                 {selectedUnit}
               </span>
             </div>
