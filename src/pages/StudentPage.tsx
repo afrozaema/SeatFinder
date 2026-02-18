@@ -260,19 +260,21 @@ function StudentPage() {
             {/* Quick Summary Banner */}
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}
               className={`rounded-2xl shadow-xl border p-5 sm:p-6 card-with-dots ${isDarkMode ? 'bg-gradient-to-r from-blue-900/40 via-purple-900/40 to-pink-900/40 border-blue-500/20 card-with-dots-dark' : 'bg-gradient-to-r from-blue-50/80 via-purple-50/80 to-pink-50/80 border-purple-200/60'}`}>
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg shadow-blue-500/20"><User className="w-7 h-7 text-white" /></div>
-                  <div>
-                    <h3 className={`text-xl sm:text-2xl font-extrabold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{studentData.name}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`font-mono text-sm font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>#{studentData.roll}</span>
-                      <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>•</span>
-                      <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{studentData.institution}</span>
-                    </div>
-                  </div>
+              <div className="flex flex-col items-center gap-3">
+                {/* Avatar */}
+                <div className="p-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full shadow-lg shadow-blue-500/20">
+                  <User className="w-10 h-10 text-white" />
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                {/* Name */}
+                <h3 className={`text-xl sm:text-2xl font-extrabold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{studentData.name}</h3>
+                {/* Info */}
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <span className={`font-mono text-sm font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>#{studentData.roll}</span>
+                  <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>•</span>
+                  <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{studentData.institution}</span>
+                </div>
+                {/* Badges */}
+                <div className="flex flex-wrap items-center justify-center gap-2">
                   {gender && (
                     <div className={`px-3 py-1.5 rounded-xl text-xs font-bold ${isDarkMode ? (gender === 'male' ? 'bg-blue-500/15 text-blue-300 border border-blue-500/20' : 'bg-pink-500/15 text-pink-300 border border-pink-500/20') : (gender === 'male' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-pink-50 text-pink-700 border border-pink-200')}`}>
                       {gender === 'male' ? '👨‍🎓 Male' : '👩‍🎓 Female'}
