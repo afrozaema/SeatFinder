@@ -20,12 +20,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [adminLoading, setAdminLoading] = useState(true);
-  const lastCheckedUserId = useRef<string | null>(null);
+  const initializedRef = useRef(false);
 
   const checkAdminRole = useCallback(async (userId: string) => {
-    // Avoid redundant checks for the same user
-    if (lastCheckedUserId.current === userId) return;
-    lastCheckedUserId.current = userId;
     setAdminLoading(true);
     try {
       const { data } = await supabase
@@ -40,46 +37,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // 1. Set up listener FIRST (as recommended by Supabase docs)
+    // 1. Set up listener — but ignore events until initial session is loaded
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!initializedRef.current) return; // Wait for getSession to complete first
+      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Use setTimeout to avoid potential deadlock with Supabase client
         setTimeout(() => checkAdminRole(session.user.id), 0);
       } else {
-        lastCheckedUserId.current = null;
         setIsAdmin(false);
         setAdminLoading(false);
       }
       setLoading(false);
     });
 
-    // 2. Then check for existing session
+    // 2. Get initial session — this is the source of truth for first load
     supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
       if (session?.user) {
-        setSession(session);
-        setUser(session.user);
         checkAdminRole(session.user.id);
       } else {
         setAdminLoading(false);
       }
       setLoading(false);
+      initializedRef.current = true; // Now allow onAuthStateChange to process
     });
 
     return () => subscription.unsubscribe();
   }, [checkAdminRole]);
 
   const signIn = async (email: string, password: string) => {
-    // Reset the cached user id so admin check runs fresh after login
-    lastCheckedUserId.current = null;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error };
   };
 
   const signOut = async () => {
-    lastCheckedUserId.current = null;
     await supabase.auth.signOut();
     setIsAdmin(false);
   };
