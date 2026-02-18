@@ -24,7 +24,10 @@ interface StudentData {
   directions: string;
   mapUrl: string;
   examDate: string;
+  unit: string;
 }
+
+const UNITS = ['UNIT-A', 'UNIT-B', 'UNIT-C', 'UNIT-D', 'UNIT-E'] as const;
 
 interface Quote {
   content: string;
@@ -80,6 +83,7 @@ function StudentPage() {
   const [examStarted, setExamStarted] = useState(false);
   const [gender, setGender] = useState<string>('');
   const [currentEmaAdvice, setCurrentEmaAdvice] = useState<string>('');
+  const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -145,6 +149,7 @@ function StudentPage() {
           room: s.room, floor: s.floor, reportTime: s.report_time, startTime: s.start_time,
           endTime: s.end_time, directions: s.directions, mapUrl: s.map_url,
           examDate: (s as any).exam_date || new Date().toISOString().split('T')[0],
+          unit: (s as any).unit || 'UNIT-A',
         })));
       }
     } catch (err) { console.error('Error loading students data:', err); }
@@ -182,7 +187,7 @@ function StudentPage() {
     if (!rollNumber.trim()) { setError('Please enter a roll number'); return; }
     setLoading(true); setError(''); setStudentData(null); setGender('');
     const trimmedRoll = rollNumber.trim();
-    const student = centersData.find(s => s.roll === trimmedRoll);
+    const student = centersData.find(s => s.roll === trimmedRoll && s.unit === selectedUnit);
     supabase.from('search_logs').insert({ roll_number: trimmedRoll, found: !!student }).then();
     if (student) {
       setStudentData(student);
@@ -216,43 +221,89 @@ function StudentPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
-        {/* Search Section */}
-        <div className={`rounded-2xl shadow-xl border backdrop-blur-xl mb-6 card-with-dots ${isDarkMode ? 'bg-gray-800/60 border-white/10 card-with-dots-dark' : 'bg-white/70 border-gray-200/60'}`}>
-          <div className="p-5 sm:p-8">
-            <div className="text-center mb-6">
-              <div className="flex items-center justify-center space-x-3 mb-3">
-                <div className="p-2.5 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg shadow-blue-500/20">
-                  <Search className="w-5 h-5 text-white" />
+        {/* Unit Selection */}
+        {!selectedUnit ? (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`rounded-2xl shadow-xl border backdrop-blur-xl mb-6 card-with-dots ${isDarkMode ? 'bg-gray-800/60 border-white/10 card-with-dots-dark' : 'bg-white/70 border-gray-200/60'}`}>
+            <div className="p-5 sm:p-8">
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center space-x-3 mb-3">
+                  <div className="p-2.5 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg shadow-blue-500/20">
+                    <Building className="w-5 h-5 text-white" />
+                  </div>
+                  <h2 className={`text-xl sm:text-2xl font-extrabold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Select Your Unit</h2>
+                  <div className="p-2.5 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg shadow-purple-500/20">
+                    <Target className="w-5 h-5 text-white" />
+                  </div>
                 </div>
-                <h2 className={`text-xl sm:text-2xl font-extrabold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Find Your Exam Seat</h2>
-                <div className="p-2.5 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg shadow-purple-500/20">
-                  <Target className="w-5 h-5 text-white" />
-                </div>
+                <p className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Choose your exam unit to find your seat</p>
               </div>
-              <p className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Enter your roll number to get complete exam details with AI assistance</p>
+              <div className="flex flex-wrap justify-center gap-3">
+                {UNITS.map((unit) => (
+                  <motion.button
+                    key={unit}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedUnit(unit)}
+                    className={`px-6 py-3 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 shadow-md hover:shadow-lg ${isDarkMode ? 'bg-gradient-to-r from-blue-600/80 to-purple-600/80 text-white border border-white/10 hover:from-blue-500 hover:to-purple-500' : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700'}`}
+                  >
+                    {unit}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <>
+            {/* Selected Unit Badge + Back */}
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <button onClick={() => { setSelectedUnit(null); setStudentData(null); setError(''); setRollNumber(''); }}
+                className={`flex items-center space-x-1 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${isDarkMode ? 'text-gray-400 hover:bg-white/10' : 'text-gray-600 hover:bg-gray-100'}`}>
+                <ArrowLeft className="w-4 h-4" /><span>Change Unit</span>
+              </button>
+              <span className={`px-4 py-2 rounded-xl text-sm font-bold ${isDarkMode ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'bg-blue-100 text-blue-700 border border-blue-200'}`}>
+                {selectedUnit}
+              </span>
             </div>
 
-            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 max-w-2xl mx-auto">
-              <div className="flex-1 relative">
-                <input type="text" placeholder="Enter Roll Number (e.g., 230417)" value={rollNumber} onChange={(e) => setRollNumber(e.target.value)} onKeyDown={handleKeyPress}
-                  className={`w-full px-5 py-3.5 sm:py-4 rounded-xl border-2 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base font-medium ${isDarkMode ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:bg-white/10' : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:bg-white'}`} />
-                <div className="absolute right-4 top-1/2 transform -translate-y-1/2"><Zap className="w-4 h-4 text-yellow-500 opacity-60" /></div>
-              </div>
-              <div className="flex justify-center">
-                <button onClick={handleSearch} disabled={loading}
-                  className="w-fit px-7 py-3.5 sm:py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 text-white rounded-xl hover:shadow-lg hover:shadow-purple-500/25 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-md font-bold text-sm sm:text-base">
-                  {loading ? (<><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div><span>Searching...</span></>) : (<><Search className="w-4 h-4" /><span>Search</span><Sparkles className="w-3 h-3 opacity-70" /></>)}
-                </button>
+            {/* Search Section */}
+            <div className={`rounded-2xl shadow-xl border backdrop-blur-xl mb-6 card-with-dots ${isDarkMode ? 'bg-gray-800/60 border-white/10 card-with-dots-dark' : 'bg-white/70 border-gray-200/60'}`}>
+              <div className="p-5 sm:p-8">
+                <div className="text-center mb-6">
+                  <div className="flex items-center justify-center space-x-3 mb-3">
+                    <div className="p-2.5 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg shadow-blue-500/20">
+                      <Search className="w-5 h-5 text-white" />
+                    </div>
+                    <h2 className={`text-xl sm:text-2xl font-extrabold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Find Your Exam Seat</h2>
+                    <div className="p-2.5 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg shadow-purple-500/20">
+                      <Target className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
+                  <p className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Enter your roll number to get complete exam details with AI assistance</p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 max-w-2xl mx-auto">
+                  <div className="flex-1 relative">
+                    <input type="text" placeholder="Enter Roll Number (e.g., 230417)" value={rollNumber} onChange={(e) => setRollNumber(e.target.value)} onKeyDown={handleKeyPress}
+                      className={`w-full px-5 py-3.5 sm:py-4 rounded-xl border-2 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-base font-medium ${isDarkMode ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:bg-white/10' : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:bg-white'}`} />
+                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2"><Zap className="w-4 h-4 text-yellow-500 opacity-60" /></div>
+                  </div>
+                  <div className="flex justify-center">
+                    <button onClick={handleSearch} disabled={loading}
+                      className="w-fit px-7 py-3.5 sm:py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 text-white rounded-xl hover:shadow-lg hover:shadow-purple-500/25 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-md font-bold text-sm sm:text-base">
+                      {loading ? (<><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div><span>Searching...</span></>) : (<><Search className="w-4 h-4" /><span>Search</span><Sparkles className="w-3 h-3 opacity-70" /></>)}
+                    </button>
+                  </div>
+                </div>
+
+                {error && (
+                  <div className={`mt-4 p-3.5 rounded-xl flex items-center space-x-3 max-w-2xl mx-auto ${isDarkMode ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-red-50 border border-red-200 text-red-700'}`}>
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" /><span className="font-medium text-sm sm:text-base">{error}</span>
+                  </div>
+                )}
               </div>
             </div>
-
-            {error && (
-              <div className={`mt-4 p-3.5 rounded-xl flex items-center space-x-3 max-w-2xl mx-auto ${isDarkMode ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-red-50 border border-red-200 text-red-700'}`}>
-                <AlertCircle className="w-4 h-4 flex-shrink-0" /><span className="font-medium text-sm sm:text-base">{error}</span>
-              </div>
-            )}
-          </div>
-        </div>
+          </>
+        )}
 
         {/* Student Results */}
         {studentData && (
