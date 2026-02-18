@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Search,
@@ -140,6 +141,7 @@ function Index() {
   const [gender, setGender] = useState<string>('');
   const [currentEmaAdvice, setCurrentEmaAdvice] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadCentersData();
@@ -347,6 +349,10 @@ function Index() {
     if (student) {
       setStudentData(student);
       await fetchGender(student.name);
+      // Auto-scroll to results
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     } else {
       setError('Roll number not found. Please check and try again.');
     }
@@ -594,147 +600,160 @@ function Index() {
 
         {/* Student Information */}
         {studentData && (
-          <div className="space-y-6">
-            {/* Exam Countdown */}
-            <div className={`rounded-xl shadow-xl border p-4 sm:p-6 text-center card-with-dots ${
-              isDarkMode ? 'bg-gradient-to-r from-red-900/50 to-orange-900/50 border-red-700 card-with-dots-dark' : 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200'
-            }`}>
-              <div className="flex items-center justify-center space-x-3 mb-4">
-                <Timer className="w-6 h-6 text-red-500 animate-pulse" />
-                <h3 className={`text-xl sm:text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Exam Countdown
-                </h3>
-                <Bell className="w-6 h-6 text-orange-500 animate-bounce" />
-              </div>
-              <div className={`text-2xl sm:text-3xl font-mono font-bold ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
-                {examCountdown}
-              </div>
-            </div>
-
-            {/* Basic Info */}
-            <div className={`rounded-xl shadow-xl border p-4 sm:p-6 card-with-dots ${
-              isDarkMode ? 'bg-gray-800/90 border-gray-700 card-with-dots-dark' : 'bg-white/90 border-gray-200'
-            }`}>
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="p-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full">
-                  <User className="w-6 h-6 text-white" />
+          <motion.div
+            ref={resultsRef}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            className="space-y-6"
+          >
+            {/* Quick Summary Banner */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
+              className={`rounded-2xl shadow-xl border p-5 sm:p-6 card-with-dots ${
+                isDarkMode
+                  ? 'bg-gradient-to-r from-blue-900/40 via-purple-900/40 to-pink-900/40 border-blue-500/20 card-with-dots-dark'
+                  : 'bg-gradient-to-r from-blue-50/80 via-purple-50/80 to-pink-50/80 border-purple-200/60'
+              }`}
+            >
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg shadow-blue-500/20">
+                    <User className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <h3 className={`text-xl sm:text-2xl font-extrabold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {studentData.name}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`font-mono text-sm font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                        #{studentData.roll}
+                      </span>
+                      <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>•</span>
+                      <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {studentData.institution}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <h3 className={`text-xl sm:text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Student Information
-                </h3>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {gender && (
-                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      gender === 'male'
-                        ? 'bg-blue-100 text-blue-800 border-2 border-blue-300'
-                        : 'bg-pink-100 text-pink-800 border-2 border-pink-300'
+                    <div className={`px-3 py-1.5 rounded-xl text-xs font-bold ${
+                      isDarkMode
+                        ? gender === 'male' ? 'bg-blue-500/15 text-blue-300 border border-blue-500/20' : 'bg-pink-500/15 text-pink-300 border border-pink-500/20'
+                        : gender === 'male' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-pink-50 text-pink-700 border border-pink-200'
                     }`}>
                       {gender === 'male' ? '👨‍🎓 Male' : '👩‍🎓 Female'}
                     </div>
                   )}
-                  <div className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold border-2 border-green-300">
-                    <Award className="w-3 h-3 inline mr-1" />
-                    Verified
+                  <div className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 ${
+                    isDarkMode ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  }`}>
+                    <CheckCircle className="w-3 h-3" /> Verified
                   </div>
                 </div>
               </div>
+            </motion.div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="space-y-4">
-                  <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                    <label className={`text-sm font-bold ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wide`}>Full Name</label>
-                    <p className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mt-1`}>{studentData.name}</p>
-                  </div>
-                  <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                    <label className={`text-sm font-bold ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wide`}>Roll Number</label>
-                    <p className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mt-1 font-mono`}>{studentData.roll}</p>
-                  </div>
+            {/* Exam Countdown */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className={`rounded-2xl shadow-xl border p-5 text-center ${
+                isDarkMode
+                  ? 'bg-gradient-to-r from-red-900/30 to-orange-900/30 border-red-500/20'
+                  : 'bg-gradient-to-r from-red-50/80 to-orange-50/80 border-red-200/60'
+              }`}
+            >
+              <div className="flex items-center justify-center space-x-3 mb-3">
+                <Timer className="w-5 h-5 text-red-500 animate-pulse" />
+                <h3 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Exam Countdown
+                </h3>
+                <Bell className="w-5 h-5 text-orange-500 animate-bounce" />
+              </div>
+              <div className={`text-3xl sm:text-4xl font-mono font-extrabold tracking-wider ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                {examCountdown}
+              </div>
+            </motion.div>
+
+            {/* Exam Details - Key Info Grid */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className={`rounded-2xl shadow-xl border p-5 sm:p-6 ${
+                isDarkMode ? 'bg-gray-800/60 border-white/10' : 'bg-white/70 border-gray-200/60'
+              }`}
+            >
+              <div className="flex items-center space-x-3 mb-5">
+                <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg shadow-emerald-500/20">
+                  <Building className="w-5 h-5 text-white" />
                 </div>
-                <div className="space-y-4">
-                  <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                    <label className={`text-sm font-bold ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wide`}>Institution</label>
-                    <p className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mt-1`}>{studentData.institution}</p>
-                  </div>
-                  <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                    <label className={`text-sm font-bold ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wide`}>Building</label>
-                    <p className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mt-1`}>{studentData.building}</p>
-                  </div>
+                <h3 className={`text-lg sm:text-xl font-extrabold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Exam Details</h3>
+                <div className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1 ${
+                  isDarkMode ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                }`}>
+                  <CheckCircle className="w-3 h-3" /> Confirmed
                 </div>
               </div>
-            </div>
 
-            {/* Exam Details */}
-            <div className={`rounded-xl shadow-xl border p-4 sm:p-6 card-with-dots ${
-              isDarkMode ? 'bg-gray-800/90 border-gray-700 card-with-dots-dark' : 'bg-white/90 border-gray-200'
-            }`}>
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="p-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full">
-                  <Building className="w-6 h-6 text-white" />
-                </div>
-                <h3 className={`text-xl sm:text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Exam Details</h3>
-                <div className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold border-2 border-green-300">
-                  <CheckCircle className="w-3 h-3 inline mr-1" />Confirmed
-                </div>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {[
+                  { icon: <Building className="w-5 h-5" />, label: 'Room', value: studentData.room, sub: studentData.floor, gradient: isDarkMode ? 'from-emerald-500/15 to-teal-500/10' : 'from-emerald-50 to-teal-50', border: isDarkMode ? 'border-emerald-500/20' : 'border-emerald-200', iconColor: 'text-emerald-500', labelColor: isDarkMode ? 'text-emerald-400' : 'text-emerald-700', valueColor: isDarkMode ? 'text-white' : 'text-emerald-900', subColor: isDarkMode ? 'text-emerald-400/70' : 'text-emerald-600' },
+                  { icon: <Clock className="w-5 h-5" />, label: 'Report', value: studentData.reportTime, sub: 'Be punctual!', gradient: isDarkMode ? 'from-blue-500/15 to-cyan-500/10' : 'from-blue-50 to-cyan-50', border: isDarkMode ? 'border-blue-500/20' : 'border-blue-200', iconColor: 'text-blue-500', labelColor: isDarkMode ? 'text-blue-400' : 'text-blue-700', valueColor: isDarkMode ? 'text-white' : 'text-blue-900', subColor: isDarkMode ? 'text-blue-400/70' : 'text-blue-600' },
+                  { icon: <Timer className="w-5 h-5" />, label: 'Start', value: studentData.startTime, sub: 'Exam begins', gradient: isDarkMode ? 'from-purple-500/15 to-indigo-500/10' : 'from-purple-50 to-indigo-50', border: isDarkMode ? 'border-purple-500/20' : 'border-purple-200', iconColor: 'text-purple-500', labelColor: isDarkMode ? 'text-purple-400' : 'text-purple-700', valueColor: isDarkMode ? 'text-white' : 'text-purple-900', subColor: isDarkMode ? 'text-purple-400/70' : 'text-purple-600' },
+                  { icon: <Clock className="w-5 h-5" />, label: 'End', value: studentData.endTime, sub: 'Exam ends', gradient: isDarkMode ? 'from-orange-500/15 to-red-500/10' : 'from-orange-50 to-red-50', border: isDarkMode ? 'border-orange-500/20' : 'border-orange-200', iconColor: 'text-orange-500', labelColor: isDarkMode ? 'text-orange-400' : 'text-orange-700', valueColor: isDarkMode ? 'text-white' : 'text-orange-900', subColor: isDarkMode ? 'text-orange-400/70' : 'text-orange-600' },
+                ].map((card, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 + i * 0.08 }}
+                    className={`bg-gradient-to-br ${card.gradient} rounded-xl p-4 border ${card.border} hover:shadow-md transition-shadow`}
+                  >
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span className={card.iconColor}>{card.icon}</span>
+                      <label className={`text-xs font-bold uppercase tracking-wider ${card.labelColor}`}>{card.label}</label>
+                    </div>
+                    <p className={`text-2xl font-extrabold mb-1 ${card.valueColor}`}>{card.value}</p>
+                    <p className={`text-xs font-semibold ${card.subColor}`}>{card.sub}</p>
+                  </motion.div>
+                ))}
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Building className="w-5 h-5 text-green-600" />
-                    <label className="text-xs font-bold text-green-700 uppercase tracking-wide">Room Number</label>
-                  </div>
-                  <p className="text-2xl font-bold text-green-900 mb-2">{studentData.room}</p>
-                  <p className="text-sm text-green-700 font-semibold">{studentData.floor}</p>
-                </div>
-
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border-2 border-blue-200">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Clock className="w-5 h-5 text-blue-600" />
-                    <label className="text-xs font-bold text-blue-700 uppercase tracking-wide">Report Time</label>
-                  </div>
-                  <p className="text-2xl font-bold text-blue-900 mb-2">{studentData.reportTime}</p>
-                  <p className="text-xs text-blue-600 font-semibold">Be punctual!</p>
-                </div>
-
-                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 border-2 border-purple-200">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Timer className="w-5 h-5 text-purple-600" />
-                    <label className="text-xs font-bold text-purple-700 uppercase tracking-wide">Start Time</label>
-                  </div>
-                  <p className="text-2xl font-bold text-purple-900 mb-2">{studentData.startTime}</p>
-                  <p className="text-xs text-purple-600 font-semibold">Exam begins</p>
-                </div>
-
-                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-4 border-2 border-orange-200">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Clock className="w-5 h-5 text-orange-600" />
-                    <label className="text-xs font-bold text-orange-700 uppercase tracking-wide">End Time</label>
-                  </div>
-                  <p className="text-2xl font-bold text-orange-900 mb-2">{studentData.endTime}</p>
-                  <p className="text-xs text-orange-600 font-semibold">Exam ends</p>
-                </div>
-              </div>
-            </div>
+            </motion.div>
 
             {/* Live Location & Directions */}
-            <div className={`rounded-xl shadow-xl border p-4 sm:p-6 card-with-dots ${
-              isDarkMode ? 'bg-gray-800/90 border-gray-700 card-with-dots-dark' : 'bg-white/90 border-gray-200'
-            }`}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className={`rounded-2xl shadow-xl border p-5 sm:p-6 ${
+                isDarkMode ? 'bg-gray-800/60 border-white/10' : 'bg-white/70 border-gray-200/60'
+              }`}
+            >
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 mb-6">
-                <div className="flex items-center space-x-4">
-                  <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full">
-                    <Map className="w-6 h-6 text-white" />
+                <div className="flex items-center space-x-3">
+                  <div className="p-2.5 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl shadow-lg shadow-purple-500/20">
+                    <Map className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className={`text-xl sm:text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <h3 className={`text-lg sm:text-xl font-extrabold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       Live Location & Directions
                     </h3>
                     <div className="flex items-center space-x-2 mt-1">
-                      <div className="flex items-center space-x-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold border border-green-300">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <div className={`flex items-center space-x-1 px-2 py-0.5 rounded-lg text-xs font-bold ${
+                        isDarkMode ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      }`}>
+                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
                         <span>Live</span>
                       </div>
-                      <div className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold border border-blue-300">
+                      <div className={`px-2 py-0.5 rounded-lg text-xs font-bold ${
+                        isDarkMode ? 'bg-blue-500/15 text-blue-300 border border-blue-500/20' : 'bg-blue-50 text-blue-700 border border-blue-200'
+                      }`}>
                         <Navigation className="w-3 h-3 inline mr-1" />GPS Ready
                       </div>
                     </div>
@@ -743,11 +762,11 @@ function Index() {
 
                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
                   <a href={studentData.mapUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center justify-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all duration-300 shadow-lg text-sm font-semibold">
+                    className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 text-sm font-bold">
                     <Eye className="w-4 h-4" /><span>View Full Map</span><ExternalLink className="w-3 h-3" />
                   </a>
                   <a href={`${studentData.mapUrl}&dir=1`} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center justify-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300 shadow-lg text-sm font-semibold">
+                    className="flex items-center justify-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 text-sm font-bold">
                     <Route className="w-4 h-4" /><span>Get Directions</span><ArrowRight className="w-3 h-3" />
                   </a>
                 </div>
@@ -756,49 +775,57 @@ function Index() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Map Preview */}
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-2 mb-3">
+                  <div className="flex items-center space-x-2 mb-2">
                     <Locate className="w-5 h-5 text-blue-500" />
-                    <h4 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Live Location Preview</h4>
+                    <h4 className={`text-base font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Live Location Preview</h4>
                   </div>
 
-                  <div className="relative bg-gradient-to-br from-blue-100 via-green-50 to-blue-100 rounded-xl p-6 border-2 border-blue-200 min-h-[300px] overflow-hidden">
+                  <div className={`relative rounded-2xl p-5 border min-h-[280px] overflow-hidden ${
+                    isDarkMode
+                      ? 'bg-gradient-to-br from-blue-900/30 via-emerald-900/20 to-blue-900/30 border-blue-500/20'
+                      : 'bg-gradient-to-br from-blue-100 via-emerald-50 to-blue-100 border-blue-200'
+                  }`}>
                     <div className="absolute inset-0 opacity-20">
                       <div className="absolute top-4 left-4 w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                      <div className="absolute top-8 right-6 w-1 h-1 bg-green-500 rounded-full animate-ping"></div>
+                      <div className="absolute top-8 right-6 w-1 h-1 bg-emerald-500 rounded-full animate-ping"></div>
                       <div className="absolute bottom-6 left-8 w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></div>
                       <div className="absolute bottom-4 right-4 w-2 h-2 bg-pink-500 rounded-full animate-ping"></div>
                     </div>
 
-                    <div className="relative z-10 space-y-4">
-                      <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4 border border-blue-200 shadow-lg">
+                    <div className="relative z-10 space-y-3">
+                      <div className={`backdrop-blur-sm rounded-xl p-4 border shadow-sm ${
+                        isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white/90 border-blue-200'
+                      }`}>
                         <div className="flex items-center space-x-3 mb-3">
-                          <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full">
-                            <Building className="w-5 h-5 text-white" />
+                          <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl">
+                            <Building className="w-4 h-4 text-white" />
                           </div>
                           <div>
-                            <h5 className="font-bold text-gray-900">{studentData.building}</h5>
-                            <p className="text-sm text-gray-600">{studentData.institution}</p>
+                            <h5 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{studentData.building}</h5>
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{studentData.institution}</p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                          <div className="bg-blue-50 rounded-lg p-2 border border-blue-200">
-                            <span className="text-blue-600 font-semibold">Room:</span>
-                            <p className="font-bold text-blue-900">{studentData.room}</p>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className={`rounded-lg p-2 ${isDarkMode ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-blue-50 border border-blue-200'}`}>
+                            <span className={`font-semibold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>Room:</span>
+                            <p className={`font-bold ${isDarkMode ? 'text-white' : 'text-blue-900'}`}>{studentData.room}</p>
                           </div>
-                          <div className="bg-green-50 rounded-lg p-2 border border-green-200">
-                            <span className="text-green-600 font-semibold">Floor:</span>
-                            <p className="font-bold text-green-900">{studentData.floor}</p>
+                          <div className={`rounded-lg p-2 ${isDarkMode ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-emerald-50 border border-emerald-200'}`}>
+                            <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Floor:</span>
+                            <p className={`font-bold ${isDarkMode ? 'text-white' : 'text-emerald-900'}`}>{studentData.floor}</p>
                           </div>
                         </div>
                       </div>
 
-                      <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 border border-purple-200 shadow-lg">
+                      <div className={`backdrop-blur-sm rounded-xl p-3 border shadow-sm ${
+                        isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white/90 border-purple-200'
+                      }`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <MapPin className="w-4 h-4 text-purple-500" />
-                            <span className="text-sm font-semibold text-gray-700">GPS Coordinates</span>
+                            <span className={`text-sm font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>GPS Coordinates</span>
                           </div>
-                          <div className="text-xs font-mono text-gray-600">
+                          <div className={`text-xs font-mono ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                             {(() => {
                               const coords = extractCoordinates(studentData.mapUrl);
                               return `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`;
@@ -807,23 +834,25 @@ function Index() {
                         </div>
                       </div>
 
-                      <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3 border border-orange-200 shadow-lg">
+                      <div className={`backdrop-blur-sm rounded-xl p-3 border shadow-sm ${
+                        isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white/90 border-orange-200'
+                      }`}>
                         <div className="flex items-center space-x-2 mb-2">
                           <Clock className="w-4 h-4 text-orange-500" />
-                          <span className="text-sm font-semibold text-gray-700">Exam Schedule</span>
+                          <span className={`text-sm font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Exam Schedule</span>
                         </div>
                         <div className="grid grid-cols-3 gap-2 text-xs">
                           <div className="text-center">
-                            <p className="text-gray-500">Report</p>
-                            <p className="font-bold text-orange-600">{studentData.reportTime}</p>
+                            <p className={isDarkMode ? 'text-gray-500' : 'text-gray-500'}>Report</p>
+                            <p className={`font-bold ${isDarkMode ? 'text-orange-400' : 'text-orange-600'}`}>{studentData.reportTime}</p>
                           </div>
                           <div className="text-center">
-                            <p className="text-gray-500">Start</p>
-                            <p className="font-bold text-green-600">{studentData.startTime}</p>
+                            <p className={isDarkMode ? 'text-gray-500' : 'text-gray-500'}>Start</p>
+                            <p className={`font-bold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>{studentData.startTime}</p>
                           </div>
                           <div className="text-center">
-                            <p className="text-gray-500">End</p>
-                            <p className="font-bold text-red-600">{studentData.endTime}</p>
+                            <p className={isDarkMode ? 'text-gray-500' : 'text-gray-500'}>End</p>
+                            <p className={`font-bold ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>{studentData.endTime}</p>
                           </div>
                         </div>
                       </div>
@@ -842,34 +871,46 @@ function Index() {
                 </div>
 
                 {/* Step-by-Step Directions */}
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2 mb-3">
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2 mb-2">
                     <Route className="w-5 h-5 text-purple-500" />
-                    <h4 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Step-by-Step Directions</h4>
+                    <h4 className={`text-base font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Step-by-Step Directions</h4>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {studentData.directions.split(' ➞ ').map((step, index) => (
-                      <div key={index} className="flex items-start space-x-3 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border-2 border-purple-200 hover:from-purple-100 hover:to-pink-100 transition-all duration-200">
-                        <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg">
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.6 + index * 0.1 }}
+                        className={`flex items-start space-x-3 p-3.5 rounded-xl border transition-all duration-200 hover:shadow-md ${
+                          isDarkMode
+                            ? 'bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/15 hover:from-purple-500/15 hover:to-pink-500/15'
+                            : 'bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200/60 hover:from-purple-100 hover:to-pink-100'
+                        }`}
+                      >
+                        <div className="flex-shrink-0 w-7 h-7 bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-lg flex items-center justify-center text-xs font-bold shadow-md">
                           {index + 1}
                         </div>
                         <div className="flex-1">
-                          <span className="text-gray-800 font-medium text-sm leading-relaxed">{step}</span>
+                          <span className={`text-sm font-medium leading-relaxed ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{step}</span>
                         </div>
-                        <div className="flex-shrink-0">
-                          <CheckCircle className="w-5 h-5 text-green-500" />
-                        </div>
-                      </div>
+                        <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                      </motion.div>
                     ))}
                   </div>
 
-                  <div className="mt-4 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-lg">
+                  <div className={`mt-3 p-3.5 rounded-xl border ${
+                    isDarkMode
+                      ? 'bg-yellow-500/10 border-yellow-500/15'
+                      : 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200'
+                  }`}>
                     <div className="flex items-start space-x-3">
-                      <Bell className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                      <Bell className={`w-5 h-5 flex-shrink-0 mt-0.5 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
                       <div>
-                        <h5 className="font-bold text-yellow-800 mb-2">📍 Navigation Tips:</h5>
-                        <ul className="text-sm text-yellow-700 space-y-1">
+                        <h5 className={`font-bold mb-1.5 text-sm ${isDarkMode ? 'text-yellow-300' : 'text-yellow-800'}`}>📍 Navigation Tips:</h5>
+                        <ul className={`text-xs space-y-0.5 ${isDarkMode ? 'text-yellow-400/80' : 'text-yellow-700'}`}>
                           <li>• Arrive 30 minutes before exam time</li>
                           <li>• Follow the step-by-step directions above</li>
                           <li>• Use the GPS coordinates for precise location</li>
@@ -880,38 +921,47 @@ function Index() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Exam Day Checklist */}
-            <div className={`rounded-xl shadow-xl border p-4 sm:p-6 card-with-dots ${
-              isDarkMode ? 'bg-gray-800/90 border-gray-700 card-with-dots-dark' : 'bg-white/90 border-gray-200'
-            }`}>
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="p-2 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full">
-                  <BookOpen className="w-6 h-6 text-white" />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className={`rounded-2xl shadow-xl border p-5 sm:p-6 ${
+                isDarkMode ? 'bg-gray-800/60 border-white/10' : 'bg-white/70 border-gray-200/60'
+              }`}
+            >
+              <div className="flex items-center space-x-3 mb-5">
+                <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl shadow-lg shadow-indigo-500/20">
+                  <BookOpen className="w-5 h-5 text-white" />
                 </div>
-                <h3 className={`text-xl sm:text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Exam Day Checklist</h3>
-                <div className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-bold border-2 border-indigo-300">
-                  <Bookmark className="w-3 h-3 inline mr-1" />Essential
+                <h3 className={`text-lg sm:text-xl font-extrabold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Exam Day Checklist</h3>
+                <div className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1 ${
+                  isDarkMode ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/20' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                }`}>
+                  <Bookmark className="w-3 h-3" /> Essential
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 <div>
-                  <h4 className="font-bold text-green-700 mb-4 flex items-center space-x-2 text-lg">
-                    <CheckCircle className="w-5 h-5" />
+                  <h4 className={`font-bold mb-3 flex items-center space-x-2 text-base ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'}`}>
+                    <CheckCircle className="w-4 h-4" />
                     <span>✅ What to Bring</span>
                   </h4>
                   <div className="space-y-2">
                     {whatToBring.map((item, index) => (
-                      <div key={index} className={`flex items-center space-x-3 p-3 rounded-lg border-2 transition-all duration-200 hover:shadow-md ${
-                        item.required ? 'bg-green-50 border-green-200 hover:bg-green-100' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                      <div key={index} className={`flex items-center space-x-3 p-3 rounded-xl border transition-all duration-200 hover:shadow-sm ${
+                        isDarkMode
+                          ? item.required ? 'bg-emerald-500/10 border-emerald-500/15' : 'bg-white/5 border-white/10'
+                          : item.required ? 'bg-emerald-50 border-emerald-200/60' : 'bg-gray-50 border-gray-200/60'
                       }`}>
-                        <span className="text-xl">{item.icon}</span>
-                        <CheckCircle className={`w-4 h-4 ${item.required ? 'text-green-600' : 'text-gray-400'}`} />
-                        <span className={`font-semibold text-sm ${item.required ? 'text-gray-900' : 'text-gray-600'}`}>
+                        <span className="text-lg">{item.icon}</span>
+                        <CheckCircle className={`w-4 h-4 ${item.required ? 'text-emerald-500' : isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
+                        <span className={`font-semibold text-sm ${isDarkMode ? (item.required ? 'text-gray-200' : 'text-gray-400') : (item.required ? 'text-gray-900' : 'text-gray-600')}`}>
                           {item.item}
-                          {item.required && <span className="text-red-500 ml-2 font-bold">*</span>}
+                          {item.required && <span className="text-red-500 ml-1.5 font-bold">*</span>}
                         </span>
                       </div>
                     ))}
@@ -919,71 +969,85 @@ function Index() {
                 </div>
 
                 <div>
-                  <h4 className="font-bold text-red-700 mb-4 flex items-center space-x-2 text-lg">
-                    <AlertCircle className="w-5 h-5" />
+                  <h4 className={`font-bold mb-3 flex items-center space-x-2 text-base ${isDarkMode ? 'text-red-400' : 'text-red-700'}`}>
+                    <AlertCircle className="w-4 h-4" />
                     <span>🚫 What NOT to Bring</span>
                   </h4>
                   <div className="space-y-2">
                     {whatNotToBring.map((item, index) => (
-                      <div key={index} className="flex items-center space-x-3 p-3 bg-red-50 rounded-lg border-2 border-red-200 hover:bg-red-100 transition-all duration-200">
-                        <span className="text-xl">{item.icon}</span>
+                      <div key={index} className={`flex items-center space-x-3 p-3 rounded-xl border transition-all duration-200 hover:shadow-sm ${
+                        isDarkMode ? 'bg-red-500/10 border-red-500/15' : 'bg-red-50 border-red-200/60'
+                      }`}>
+                        <span className="text-lg">{item.icon}</span>
                         <AlertCircle className="w-4 h-4 text-red-500" />
-                        <span className="text-gray-800 font-semibold text-sm">{item.item}</span>
+                        <span className={`font-semibold text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{item.item}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Motivation Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {quote && (
-                <div className={`rounded-xl shadow-xl border p-4 sm:p-6 card-with-dots ${
-                  isDarkMode
-                    ? 'bg-gradient-to-br from-pink-900/50 to-rose-900/50 border-pink-700 card-with-dots-dark'
-                    : 'bg-gradient-to-br from-pink-50 to-rose-50 border-pink-200'
-                }`}>
-                  <div className="flex items-center space-x-4 mb-4">
-                    <div className="p-2 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full">
-                      <Heart className="w-6 h-6 text-white" />
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 }}
+                  className={`rounded-2xl shadow-xl border p-5 sm:p-6 ${
+                    isDarkMode
+                      ? 'bg-gradient-to-br from-pink-900/30 to-rose-900/30 border-pink-500/20'
+                      : 'bg-gradient-to-br from-pink-50/80 to-rose-50/80 border-pink-200/60'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="p-2.5 bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl shadow-lg shadow-pink-500/20">
+                      <Heart className="w-5 h-5 text-white" />
                     </div>
-                    <h4 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Quote of the Day</h4>
+                    <h4 className={`text-base font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Quote of the Day</h4>
                   </div>
-                  <blockquote className={`text-base italic mb-4 leading-relaxed ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                  <blockquote className={`text-sm italic mb-3 leading-relaxed ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     "{quote.content}"
                   </blockquote>
-                  <cite className={`text-sm font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  <cite className={`text-sm font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     — {quote.author}
                   </cite>
-                </div>
+                </motion.div>
               )}
 
               {currentEmaAdvice && (
-                <div className={`rounded-xl shadow-xl border p-4 sm:p-6 card-with-dots ${
-                  isDarkMode
-                    ? 'bg-gradient-to-br from-purple-900/50 to-indigo-900/50 border-purple-700 card-with-dots-dark'
-                    : 'bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200'
-                }`}>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 }}
+                  className={`rounded-2xl shadow-xl border p-5 sm:p-6 ${
+                    isDarkMode
+                      ? 'bg-gradient-to-br from-purple-900/30 to-indigo-900/30 border-purple-500/20'
+                      : 'bg-gradient-to-br from-purple-50/80 to-indigo-50/80 border-purple-200/60'
+                  }`}
+                >
                   <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="p-2 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full">
-                        <Brain className="w-6 h-6 text-white" />
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg shadow-purple-500/20">
+                        <Brain className="w-5 h-5 text-white" />
                       </div>
-                      <h4 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Ema Advice</h4>
+                      <h4 className={`text-base font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Ema Advice</h4>
                     </div>
-                    <div className="flex items-center space-x-1 px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-bold border border-red-300">
+                    <div className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-bold ${
+                      isDarkMode ? 'bg-red-500/15 text-red-300 border border-red-500/20' : 'bg-red-50 text-red-700 border border-red-200'
+                    }`}>
                       <Heart className="w-3 h-3 animate-pulse" />
                       <span>Live</span>
                     </div>
                   </div>
-                  <div className={`p-3 rounded-lg border-2 ${isDarkMode ? 'bg-purple-800/30 border-purple-600' : 'bg-white border-purple-200'}`}>
-                    <p className={`text-base leading-relaxed font-medium ${isDarkMode ? 'text-purple-200' : 'text-purple-800'}`}>
+                  <div className={`p-3.5 rounded-xl border ${isDarkMode ? 'bg-purple-500/10 border-purple-500/15' : 'bg-white/80 border-purple-200/60'}`}>
+                    <p className={`text-sm leading-relaxed font-medium ${isDarkMode ? 'text-purple-200' : 'text-purple-800'}`}>
                       {currentEmaAdvice}
                     </p>
                   </div>
                   <div className="mt-3 flex items-center justify-center">
-                    <div className="flex items-center space-x-2 text-xs text-gray-500">
+                    <div className={`flex items-center space-x-2 text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                       <div className="flex space-x-1">
                         <div className="w-1 h-1 bg-purple-500 rounded-full animate-pulse"></div>
                         <div className="w-1 h-1 bg-purple-500 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
@@ -992,33 +1056,38 @@ function Index() {
                       <span>Updates every 2 seconds</span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               )}
             </div>
 
             {/* Success Card */}
-            <div className={`rounded-xl shadow-xl border p-4 sm:p-6 text-center card-with-dots ${
-              isDarkMode
-                ? 'bg-gradient-to-r from-green-900/50 to-emerald-900/50 border-green-700 card-with-dots-dark'
-                : 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200'
-            }`}>
-              <div className="flex items-center justify-center space-x-4 mb-4">
-                <Trophy className="w-10 h-10 text-yellow-500" />
-                <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>You're All Set! 🎯</h3>
-                <Star className="w-10 h-10 text-yellow-500" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.9 }}
+              className={`rounded-2xl shadow-xl border p-5 sm:p-6 text-center ${
+                isDarkMode
+                  ? 'bg-gradient-to-r from-emerald-900/30 to-teal-900/30 border-emerald-500/20'
+                  : 'bg-gradient-to-r from-emerald-50/80 to-teal-50/80 border-emerald-200/60'
+              }`}
+            >
+              <div className="flex items-center justify-center space-x-4 mb-3">
+                <Trophy className="w-9 h-9 text-yellow-500" />
+                <h3 className={`text-xl sm:text-2xl font-extrabold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>You're All Set! 🎯</h3>
+                <Star className="w-9 h-9 text-yellow-500" />
               </div>
-              <p className={`text-lg mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+              <p className={`text-base mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                 Everything is prepared for your exam success. Stay confident and give your best!
               </p>
-              <div className="flex items-center justify-center space-x-4">
-                <Coffee className="w-6 h-6 text-amber-700" />
-                <span className={`text-lg font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+              <div className="flex items-center justify-center space-x-3">
+                <Coffee className="w-5 h-5 text-amber-600" />
+                <span className={`text-base font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                   Good luck with your exam! ☕
                 </span>
-                <Sparkles className="w-6 h-6 text-purple-500" />
+                <Sparkles className="w-5 h-5 text-purple-500" />
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
 
         {/* Footer */}
