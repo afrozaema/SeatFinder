@@ -329,8 +329,8 @@ function StudentPage() {
                   { icon: <Clock className="w-5 h-5" />, label: 'End', value: studentData.endTime, sub: 'Exam ends', gradient: isDarkMode ? 'from-orange-500/15 to-red-500/10' : 'from-orange-50 to-red-50', border: isDarkMode ? 'border-orange-500/20' : 'border-orange-200', iconColor: 'text-orange-500', labelColor: isDarkMode ? 'text-orange-400' : 'text-orange-700', valueColor: isDarkMode ? 'text-white' : 'text-orange-900', subColor: isDarkMode ? 'text-orange-400/70' : 'text-orange-600' },
                 ].map((card, i) => (
                   <motion.div key={i} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 + i * 0.08 }}
-                    className={`bg-gradient-to-br ${card.gradient} rounded-xl p-4 border ${card.border} hover:shadow-md transition-shadow`}>
-                    <div className="flex items-center space-x-2 mb-2">
+                    className={`bg-gradient-to-br ${card.gradient} rounded-xl p-4 border ${card.border} hover:shadow-md transition-shadow text-center`}>
+                    <div className="flex items-center justify-center space-x-2 mb-2">
                       <span className={card.iconColor}>{card.icon}</span>
                       <label className={`text-xs font-bold uppercase tracking-wider ${card.labelColor}`}>{card.label}</label>
                     </div>
