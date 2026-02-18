@@ -307,7 +307,7 @@ export default function AdminDashboard() {
     .sort(([, a], [, b]) => b - a)
     .slice(0, 10);
 
-  if (authLoading) return (
+  if (authLoading || adminLoading) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent" />
     </div>
