@@ -22,6 +22,7 @@ interface Student {
   end_time: string;
   directions: string;
   map_url: string;
+  unit: string;
 }
 
 interface Teacher {
@@ -54,7 +55,7 @@ interface SearchLog {
 
 const emptyStudent = {
   roll_number: '', name: '', institution: '', building: '', room: '', floor: '',
-  report_time: '', start_time: '', end_time: '', directions: '', map_url: ''
+  report_time: '', start_time: '', end_time: '', directions: '', map_url: '', unit: 'UNIT-A'
 };
 
 const emptyTeacher = {
@@ -84,6 +85,7 @@ export default function AdminDashboard() {
   const [filterInstitution, setFilterInstitution] = useState('');
   const [filterBuilding, setFilterBuilding] = useState('');
   const [filterFloor, setFilterFloor] = useState('');
+  const [filterUnit, setFilterUnit] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
   // Activity & Search logs
@@ -172,6 +174,7 @@ export default function AdminDashboard() {
       end_time: student.end_time,
       directions: student.directions,
       map_url: student.map_url,
+      unit: student.unit || 'UNIT-A',
     });
     setEditingId(student.id);
     setShowForm(true);
@@ -276,6 +279,7 @@ export default function AdminDashboard() {
   const institutions = [...new Set(students.map(s => s.institution))].sort();
   const buildings = [...new Set(students.map(s => s.building))].sort();
   const floors = [...new Set(students.map(s => s.floor))].sort();
+  const units = [...new Set(students.map(s => s.unit))].sort();
 
   const filteredStudents = students.filter(s => {
     const matchesSearch =
@@ -285,7 +289,8 @@ export default function AdminDashboard() {
     const matchesInstitution = !filterInstitution || s.institution === filterInstitution;
     const matchesBuilding = !filterBuilding || s.building === filterBuilding;
     const matchesFloor = !filterFloor || s.floor === filterFloor;
-    return matchesSearch && matchesInstitution && matchesBuilding && matchesFloor;
+    const matchesUnit = !filterUnit || s.unit === filterUnit;
+    return matchesSearch && matchesInstitution && matchesBuilding && matchesFloor && matchesUnit;
   });
 
   const filteredTeachers = teachers.filter(t => {
@@ -411,15 +416,15 @@ export default function AdminDashboard() {
                 </div>
                 <button onClick={() => setShowFilters(!showFilters)}
                   className={`px-4 py-3 border-2 rounded-lg flex items-center space-x-2 font-medium transition-all ${
-                    showFilters || filterInstitution || filterBuilding || filterFloor
+                    showFilters || filterInstitution || filterBuilding || filterFloor || filterUnit
                       ? 'border-blue-500 bg-blue-50 text-blue-700'
                       : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                   }`}>
                   <Filter className="w-5 h-5" />
                   <span>Filters</span>
-                  {(filterInstitution || filterBuilding || filterFloor) && (
+                   {(filterInstitution || filterBuilding || filterFloor || filterUnit) && (
                     <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5">
-                      {[filterInstitution, filterBuilding, filterFloor].filter(Boolean).length}
+                      {[filterInstitution, filterBuilding, filterFloor, filterUnit].filter(Boolean).length}
                     </span>
                   )}
                 </button>
@@ -457,9 +462,17 @@ export default function AdminDashboard() {
                       <option value="">All Floors</option>
                       {floors.map(f => <option key={f} value={f}>{f}</option>)}
                     </select>
+                   </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Unit</label>
+                    <select value={filterUnit} onChange={e => setFilterUnit(e.target.value)}
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm focus:border-blue-500">
+                      <option value="">All Units</option>
+                      {units.map(u => <option key={u} value={u}>{u}</option>)}
+                    </select>
                   </div>
                   <div className="flex items-end">
-                    <button onClick={() => { setFilterInstitution(''); setFilterBuilding(''); setFilterFloor(''); }}
+                    <button onClick={() => { setFilterInstitution(''); setFilterBuilding(''); setFilterFloor(''); setFilterUnit(''); }}
                       className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-medium">Clear All</button>
                   </div>
                 </div>
@@ -469,7 +482,7 @@ export default function AdminDashboard() {
             {/* Showing count */}
             <p className="text-sm text-gray-500 mb-3">
               Showing {filteredStudents.length} of {students.length} students
-              {(filterInstitution || filterBuilding || filterFloor) && ' (filtered)'}
+              {(filterInstitution || filterBuilding || filterFloor || filterUnit) && ' (filtered)'}
             </p>
 
             {/* Table */}
@@ -477,8 +490,8 @@ export default function AdminDashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-b">
-                    <tr>
-                      {['Roll', 'Name', 'Institution', 'Building', 'Room', 'Floor', 'Report', 'Actions'].map(h => (
+                     <tr>
+                      {['Roll', 'Name', 'Unit', 'Institution', 'Building', 'Room', 'Floor', 'Report', 'Actions'].map(h => (
                         <th key={h} className="px-4 py-3 text-left font-semibold text-gray-600 uppercase tracking-wide text-xs">{h}</th>
                       ))}
                     </tr>
@@ -487,7 +500,8 @@ export default function AdminDashboard() {
                     {filteredStudents.map(student => (
                       <tr key={student.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3 font-mono font-bold text-blue-600">{student.roll_number}</td>
-                        <td className="px-4 py-3 font-medium text-gray-900">{student.name}</td>
+                         <td className="px-4 py-3 font-medium text-gray-900">{student.name}</td>
+                        <td className="px-4 py-3"><span className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold">{student.unit}</span></td>
                         <td className="px-4 py-3 text-gray-600">{student.institution}</td>
                         <td className="px-4 py-3 text-gray-600">{student.building}</td>
                         <td className="px-4 py-3 font-bold">{student.room}</td>
@@ -904,6 +918,18 @@ export default function AdminDashboard() {
                     />
                   </div>
                 ))}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Unit</label>
+                <select
+                  value={formData.unit}
+                  onChange={(e) => setFormData(prev => ({ ...prev, unit: e.target.value }))}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm"
+                >
+                  {['UNIT-A', 'UNIT-B', 'UNIT-C', 'UNIT-D', 'UNIT-E'].map(u => (
+                    <option key={u} value={u}>{u}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Directions</label>

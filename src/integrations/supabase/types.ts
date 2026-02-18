@@ -165,6 +165,7 @@ export type Database = {
           roll_number: string
           room: string
           start_time: string
+          unit: string
           updated_at: string
         }
         Insert: {
@@ -182,6 +183,7 @@ export type Database = {
           roll_number: string
           room: string
           start_time: string
+          unit?: string
           updated_at?: string
         }
         Update: {
@@ -199,6 +201,7 @@ export type Database = {
           roll_number?: string
           room?: string
           start_time?: string
+          unit?: string
           updated_at?: string
         }
         Relationships: []
