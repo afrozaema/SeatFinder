@@ -99,7 +99,7 @@ function Index() {
         <div className={`rounded-2xl shadow-xl border p-5 sm:p-8 mb-6 text-center card-with-dots ${isDarkMode ? 'bg-gradient-to-br from-purple-900/40 to-indigo-900/40 border-purple-500/20 card-with-dots-dark' : 'bg-gradient-to-br from-purple-50/80 to-indigo-50/80 border-purple-200/60'}`}>
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4 mb-4">
             <div className="p-2.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg shadow-purple-500/25"><Brain className="w-6 h-6 text-white" /></div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-500 bg-clip-text text-transparent uppercase tracking-wider">WELCOME TO EMA</h2>
+            <h2 className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-500 bg-clip-text text-transparent uppercase tracking-wider">WELCOME TO JU</h2>
             <div className="p-2.5 bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl shadow-lg shadow-pink-500/25"><Heart className="w-6 h-6 text-white animate-pulse" /></div>
           </div>
           <p className={`text-base sm:text-lg mb-6 ${isDarkMode ? 'text-purple-300/80' : 'text-purple-700/80'}`}>Your AI-Powered Exam Assistant</p>
