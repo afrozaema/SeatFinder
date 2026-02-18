@@ -207,19 +207,7 @@ npm run dev
 
 ---
 
-## 🌐 Deployment
 
-> Open [Lovable](https://lovable.dev) → **Share** → **Publish** 🚀
-
----
-
-## 🔗 Custom Domain
-
-> Project → **Settings** → **Domains** → **Connect Domain**
-
-📖 [Learn more](https://docs.lovable.dev/features/custom-domain#custom-domain)
-
----
 
 ## 👩‍💻 Author
 
