@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: string | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      search_logs: {
+        Row: {
+          created_at: string
+          found: boolean
+          id: string
+          roll_number: string
+        }
+        Insert: {
+          created_at?: string
+          found?: boolean
+          id?: string
+          roll_number: string
+        }
+        Update: {
+          created_at?: string
+          found?: boolean
+          id?: string
+          roll_number?: string
+        }
+        Relationships: []
+      }
       students: {
         Row: {
           building: string

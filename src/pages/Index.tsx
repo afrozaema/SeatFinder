@@ -338,7 +338,12 @@ function Index() {
     setStudentData(null);
     setGender('');
 
-    const student = centersData.find(s => s.roll === rollNumber.trim());
+    const trimmedRoll = rollNumber.trim();
+    const student = centersData.find(s => s.roll === trimmedRoll);
+    
+    // Log the search (fire and forget)
+    supabase.from('search_logs').insert({ roll_number: trimmedRoll, found: !!student }).then();
+
     if (student) {
       setStudentData(student);
       await fetchGender(student.name);
