@@ -119,49 +119,60 @@ function Index() {
           </div>
         </div>
 
-        {/* Student & Teacher Selection Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-          {/* Student Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            onClick={() => navigate('/student')}
-            className={`rounded-2xl shadow-xl border p-6 sm:p-8 cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl card-with-dots ${isDarkMode ? 'bg-gradient-to-br from-blue-900/40 to-purple-900/40 border-blue-500/20 hover:border-blue-400/40 card-with-dots-dark' : 'bg-gradient-to-br from-blue-50/80 to-purple-50/80 border-blue-200/60 hover:border-blue-300'}`}
-          >
-            <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg shadow-blue-500/25 flex items-center justify-center mb-4">
-                <GraduationCap className="w-8 h-8 text-white" />
+        {/* Find Your Information */}
+        <div className={`rounded-2xl shadow-xl border backdrop-blur-xl mb-6 card-with-dots ${isDarkMode ? 'bg-gray-800/60 border-white/10 card-with-dots-dark' : 'bg-white/70 border-gray-200/60'}`}>
+          <div className="p-5 sm:p-8">
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center space-x-3 mb-3">
+                <div className="p-2.5 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl shadow-lg shadow-blue-500/20">
+                  <Search className="w-5 h-5 text-white" />
+                </div>
+                <h2 className={`text-xl sm:text-2xl font-extrabold tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Find Your Information</h2>
+                <div className="p-2.5 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-lg shadow-purple-500/20">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
               </div>
-              <h3 className={`text-xl sm:text-2xl font-extrabold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Student</h3>
-              <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Search exam seat by roll number</p>
-              <div className="flex items-center justify-center space-x-2">
-                <span className={`text-sm font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>Find Your Seat</span>
-                <ArrowRight className={`w-4 h-4 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
-              </div>
+              <p className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Select your role to search exam details or teacher information</p>
             </div>
-          </motion.div>
 
-          {/* Teacher Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            onClick={() => navigate('/teacher')}
-            className={`rounded-2xl shadow-xl border p-6 sm:p-8 cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl card-with-dots ${isDarkMode ? 'bg-gradient-to-br from-emerald-900/40 to-teal-900/40 border-emerald-500/20 hover:border-emerald-400/40 card-with-dots-dark' : 'bg-gradient-to-br from-emerald-50/80 to-teal-50/80 border-emerald-200/60 hover:border-emerald-300'}`}
-          >
-            <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg shadow-emerald-500/25 flex items-center justify-center mb-4">
-                <BookOpen className="w-8 h-8 text-white" />
-              </div>
-              <h3 className={`text-xl sm:text-2xl font-extrabold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Teacher</h3>
-              <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Search teacher info by name or ID</p>
-              <div className="flex items-center justify-center space-x-2">
-                <span className={`text-sm font-bold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Find Teacher</span>
-                <ArrowRight className={`w-4 h-4 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
-              </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              {/* Student Button */}
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                onClick={() => navigate('/student')}
+                className={`w-fit px-6 py-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-xl flex items-center space-x-4 ${isDarkMode ? 'bg-gradient-to-br from-blue-900/40 to-purple-900/40 border-blue-500/30 hover:border-blue-400/50' : 'bg-gradient-to-br from-blue-50/80 to-purple-50/80 border-blue-200/60 hover:border-blue-300'}`}
+              >
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center flex-shrink-0">
+                  <GraduationCap className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-left">
+                  <h3 className={`text-lg font-extrabold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Student</h3>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Search by roll number</p>
+                </div>
+                <ArrowRight className={`w-5 h-5 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+              </motion.button>
+
+              {/* Teacher Button */}
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                onClick={() => navigate('/teacher')}
+                className={`w-fit px-6 py-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-xl flex items-center space-x-4 ${isDarkMode ? 'bg-gradient-to-br from-emerald-900/40 to-teal-900/40 border-emerald-500/30 hover:border-emerald-400/50' : 'bg-gradient-to-br from-emerald-50/80 to-teal-50/80 border-emerald-200/60 hover:border-emerald-300'}`}
+              >
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg shadow-emerald-500/25 flex items-center justify-center flex-shrink-0">
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-left">
+                  <h3 className={`text-lg font-extrabold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Teacher</h3>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Search by name or ID</p>
+                </div>
+                <ArrowRight className={`w-5 h-5 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
+              </motion.button>
             </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* Footer */}
