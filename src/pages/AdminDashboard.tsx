@@ -63,7 +63,7 @@ const emptyTeacher = {
 type Tab = 'students' | 'teachers' | 'activity' | 'search-logs';
 
 export default function AdminDashboard() {
-  const { user, isAdmin, loading: authLoading, signOut } = useAuth();
+  const { user, isAdmin, loading: authLoading, adminLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -90,10 +90,10 @@ export default function AdminDashboard() {
   const [searchLogs, setSearchLogs] = useState<SearchLog[]>([]);
 
   useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) {
+    if (!authLoading && !adminLoading && (!user || !isAdmin)) {
       navigate('/admin/login');
     }
-  }, [user, isAdmin, authLoading, navigate]);
+  }, [user, isAdmin, authLoading, adminLoading, navigate]);
 
   useEffect(() => {
     if (user && isAdmin) {
