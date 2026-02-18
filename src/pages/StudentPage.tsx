@@ -287,7 +287,7 @@ function StudentPage() {
 
             {/* Exam Countdown */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-              className={`rounded-2xl shadow-xl border p-5 text-center ${isDarkMode ? 'bg-gradient-to-r from-red-900/30 to-orange-900/30 border-red-500/20' : 'bg-gradient-to-r from-red-50/80 to-orange-50/80 border-red-200/60'}`}>
+              className={`rounded-2xl shadow-xl border p-5 text-center w-fit mx-auto ${isDarkMode ? 'bg-gradient-to-r from-red-900/30 to-orange-900/30 border-red-500/20' : 'bg-gradient-to-r from-red-50/80 to-orange-50/80 border-red-200/60'}`}>
               <div className="flex items-center justify-center space-x-3 mb-3">
                 <Timer className="w-5 h-5 text-red-500 animate-pulse" />
                 <h3 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Exam Countdown</h3>
