@@ -114,23 +114,24 @@ function TeacherPage() {
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="space-y-6">
             {/* Profile Card */}
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}
-              className={`rounded-2xl shadow-xl border p-6 sm:p-8 card-with-dots ${isDarkMode ? 'bg-gradient-to-r from-emerald-900/40 via-teal-900/40 to-cyan-900/40 border-emerald-500/20 card-with-dots-dark' : 'bg-gradient-to-r from-emerald-50/80 via-teal-50/80 to-cyan-50/80 border-emerald-200/60'}`}>
-              <div className="flex flex-col sm:flex-row items-center gap-6">
-                <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg shadow-emerald-500/20">
+              className={`rounded-2xl shadow-xl border p-5 sm:p-6 card-with-dots w-fit mx-auto ${isDarkMode ? 'bg-gradient-to-r from-emerald-900/40 via-teal-900/40 to-cyan-900/40 border-emerald-500/20 card-with-dots-dark' : 'bg-gradient-to-r from-emerald-50/80 via-teal-50/80 to-cyan-50/80 border-emerald-200/60'}`}>
+              <div className="flex flex-col items-center gap-3">
+                {/* Avatar */}
+                <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full shadow-lg shadow-emerald-500/20">
                   <User className="w-10 h-10 text-white" />
                 </div>
-                <div className="text-center sm:text-left">
-                  <h3 className={`text-2xl sm:text-3xl font-extrabold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{teacherData.name}</h3>
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
-                    <span className={`font-mono text-sm font-bold px-3 py-1 rounded-lg ${isDarkMode ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
-                      ID: {teacherData.teacher_id}
+                {/* Name */}
+                <h3 className={`text-xl sm:text-2xl font-extrabold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{teacherData.name}</h3>
+                {/* Info */}
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <span className={`font-mono text-sm font-bold px-3 py-1 rounded-lg ${isDarkMode ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+                    ID: {teacherData.teacher_id}
+                  </span>
+                  {teacherData.designation && (
+                    <span className={`text-sm font-bold px-3 py-1 rounded-lg ${isDarkMode ? 'bg-blue-500/15 text-blue-300 border border-blue-500/20' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
+                      {teacherData.designation}
                     </span>
-                    {teacherData.designation && (
-                      <span className={`text-sm font-bold px-3 py-1 rounded-lg ${isDarkMode ? 'bg-blue-500/15 text-blue-300 border border-blue-500/20' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
-                        {teacherData.designation}
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             </motion.div>
