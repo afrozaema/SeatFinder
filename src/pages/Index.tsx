@@ -1059,6 +1059,15 @@ function Index() {
               <span className="text-lg font-semibold">Smart Exam Seat & Direction Guide</span>
               <Zap className="w-5 h-5 text-yellow-500" />
             </div>
+            <div className="flex items-center justify-center space-x-4 mb-4 text-sm">
+              <a href="/status" className="text-blue-500 hover:text-blue-400 font-medium transition-colors">
+                System Status
+              </a>
+              <span className="text-gray-500">•</span>
+              <a href="/admin/login" className="text-blue-500 hover:text-blue-400 font-medium transition-colors">
+                Admin
+              </a>
+            </div>
             <p className="text-base mb-4">
               © 2025 JU SeatFinder - ❤️
               <a
