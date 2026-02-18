@@ -17,9 +17,6 @@
 
 > 🌙 **Dark-themed** glassmorphism UI with blue-purple gradients, floating dot animations, and smooth Framer Motion transitions.
 
-<br/>
-
-<img src="public/screenshots/hero-preview.png" alt="JU SeatFinder Preview" width="100%" />
 
 ---
 
