@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { GraduationCap, Lock, Mail, LogIn, AlertCircle } from 'lucide-react';
@@ -8,8 +8,15 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, user, isAdmin, loading: authLoading, adminLoading } = useAuth();
   const navigate = useNavigate();
+
+  // If already logged in as admin, redirect to dashboard
+  useEffect(() => {
+    if (!authLoading && !adminLoading && user && isAdmin) {
+      navigate('/admin', { replace: true });
+    }
+  }, [user, isAdmin, authLoading, adminLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
