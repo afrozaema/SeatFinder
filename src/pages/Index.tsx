@@ -444,7 +444,10 @@ function Index() {
                 <div className="p-2.5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg shadow-blue-500/20">
                   <Trophy className="w-6 h-6 text-white" />
                 </div>
-                <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 bg-clip-text text-transparent tracking-tight">
+                <h1 
+                  className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 bg-clip-text text-transparent tracking-tight cursor-pointer"
+                  onClick={() => window.location.reload()}
+                >
                   JU SeatFinder
                 </h1>
                 <div className="p-2.5 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl shadow-lg shadow-purple-500/20">
