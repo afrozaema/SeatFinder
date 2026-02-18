@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, User, Sun, Moon, GraduationCap, Sparkles, Zap, AlertCircle,
-  ArrowLeft, Building, Mail, Phone, BookOpen, Award
+  ArrowLeft, Building, Mail, Phone, BookOpen, Award, CheckCircle
 } from 'lucide-react';
 
 interface TeacherData {
@@ -25,10 +25,20 @@ function TeacherPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [gender, setGender] = useState<string | null>(null);
+
+  const fetchGender = async (name: string) => {
+    try {
+      const firstName = name.split(' ')[0];
+      const res = await fetch(`https://api.genderize.io?name=${firstName}`);
+      const data = await res.json();
+      if (data.gender) setGender(data.gender);
+    } catch { setGender(null); }
+  };
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) { setError('Please enter a teacher name or ID'); return; }
-    setLoading(true); setError(''); setTeacherData(null);
+    setLoading(true); setError(''); setTeacherData(null); setGender(null);
     const trimmed = searchQuery.trim();
 
     try {
@@ -42,6 +52,7 @@ function TeacherPage() {
       if (dbError) throw dbError;
       if (data) {
         setTeacherData(data);
+        fetchGender(data.name);
       } else {
         setError('No teacher found. Please check the name or ID and try again.');
       }
@@ -132,6 +143,17 @@ function TeacherPage() {
                       {teacherData.designation}
                     </span>
                   )}
+                </div>
+                {/* Badges */}
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {gender && (
+                    <div className={`px-3 py-1.5 rounded-xl text-xs font-bold ${isDarkMode ? (gender === 'male' ? 'bg-blue-500/15 text-blue-300 border border-blue-500/20' : 'bg-pink-500/15 text-pink-300 border border-pink-500/20') : (gender === 'male' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-pink-50 text-pink-700 border border-pink-200')}`}>
+                      {gender === 'male' ? '👨‍🏫 Male' : '👩‍🏫 Female'}
+                    </div>
+                  )}
+                  <div className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 ${isDarkMode ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+                    <CheckCircle className="w-3 h-3" /> Verified
+                  </div>
                 </div>
               </div>
             </motion.div>
