@@ -570,10 +570,11 @@ function Index() {
                   <Zap className="w-4 h-4 text-yellow-500 opacity-60" />
                 </div>
               </div>
+              <div className="flex justify-center">
               <button
                 onClick={handleSearch}
                 disabled={loading}
-                className="px-7 py-3.5 sm:py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 text-white rounded-xl hover:shadow-lg hover:shadow-purple-500/25 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-md font-bold text-sm sm:text-base"
+                className="w-fit px-7 py-3.5 sm:py-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 text-white rounded-xl hover:shadow-lg hover:shadow-purple-500/25 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-md font-bold text-sm sm:text-base"
               >
                 {loading ? (
                   <>
@@ -588,6 +589,7 @@ function Index() {
                   </>
                 )}
               </button>
+              </div>
             </div>
 
             {error && (
