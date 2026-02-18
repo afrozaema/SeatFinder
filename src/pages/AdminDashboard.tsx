@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   GraduationCap, LogOut, Plus, Pencil, Trash2, Search, Users,
   Building, MapPin, Clock, Save, X, AlertCircle, CheckCircle,
-  Activity, BarChart3, Filter, ChevronDown, Eye, TrendingUp
+  Activity, BarChart3, Filter, ChevronDown, Eye, TrendingUp, UserCheck, Mail, Phone, Briefcase
 } from 'lucide-react';
 
 interface Student {
@@ -21,6 +21,17 @@ interface Student {
   end_time: string;
   directions: string;
   map_url: string;
+}
+
+interface Teacher {
+  id: string;
+  teacher_id: string;
+  name: string;
+  department: string;
+  designation: string;
+  email: string | null;
+  phone: string | null;
+  office_room: string | null;
 }
 
 interface ActivityLog {
@@ -45,16 +56,25 @@ const emptyStudent = {
   report_time: '', start_time: '', end_time: '', directions: '', map_url: ''
 };
 
-type Tab = 'students' | 'activity' | 'search-logs';
+const emptyTeacher = {
+  teacher_id: '', name: '', department: '', designation: '', email: '', phone: '', office_room: ''
+};
+
+type Tab = 'students' | 'teachers' | 'activity' | 'search-logs';
 
 export default function AdminDashboard() {
   const { user, isAdmin, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [teacherSearchQuery, setTeacherSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [showTeacherForm, setShowTeacherForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTeacherId, setEditingTeacherId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyStudent);
+  const [teacherFormData, setTeacherFormData] = useState(emptyTeacher);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('students');
@@ -78,6 +98,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (user && isAdmin) {
       fetchStudents();
+      fetchTeachers();
       fetchActivityLogs();
       fetchSearchLogs();
     }
@@ -89,6 +110,15 @@ export default function AdminDashboard() {
       .select('*')
       .order('roll_number');
     if (data) setStudents(data);
+    if (error) showMessage('error', error.message);
+  };
+
+  const fetchTeachers = async () => {
+    const { data, error } = await supabase
+      .from('teachers')
+      .select('*')
+      .order('name');
+    if (data) setTeachers(data);
     if (error) showMessage('error', error.message);
   };
 
@@ -127,6 +157,7 @@ export default function AdminDashboard() {
     setTimeout(() => setMessage(null), 3000);
   };
 
+  // Student handlers
   const handleEdit = (student: Student) => {
     setFormData({
       roll_number: student.roll_number,
@@ -185,6 +216,61 @@ export default function AdminDashboard() {
     fetchStudents();
   };
 
+  // Teacher handlers
+  const handleEditTeacher = (teacher: Teacher) => {
+    setTeacherFormData({
+      teacher_id: teacher.teacher_id,
+      name: teacher.name,
+      department: teacher.department,
+      designation: teacher.designation,
+      email: teacher.email || '',
+      phone: teacher.phone || '',
+      office_room: teacher.office_room || '',
+    });
+    setEditingTeacherId(teacher.id);
+    setShowTeacherForm(true);
+  };
+
+  const handleDeleteTeacher = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this teacher?')) return;
+    const teacher = teachers.find(t => t.id === id);
+    const { error } = await supabase.from('teachers').delete().eq('id', id);
+    if (error) {
+      showMessage('error', error.message);
+    } else {
+      showMessage('success', 'Teacher deleted successfully');
+      await logActivity('DELETE', 'teacher', id, `Deleted teacher: ${teacher?.name} (${teacher?.teacher_id})`);
+      fetchTeachers();
+    }
+  };
+
+  const handleTeacherSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    if (editingTeacherId) {
+      const { error } = await supabase.from('teachers').update(teacherFormData).eq('id', editingTeacherId);
+      if (error) showMessage('error', error.message);
+      else {
+        showMessage('success', 'Teacher updated successfully');
+        await logActivity('UPDATE', 'teacher', editingTeacherId, `Updated teacher: ${teacherFormData.name} (${teacherFormData.teacher_id})`);
+      }
+    } else {
+      const { data, error } = await supabase.from('teachers').insert(teacherFormData).select();
+      if (error) showMessage('error', error.message);
+      else {
+        showMessage('success', 'Teacher added successfully');
+        await logActivity('INSERT', 'teacher', data?.[0]?.id, `Added teacher: ${teacherFormData.name} (${teacherFormData.teacher_id})`);
+      }
+    }
+
+    setSaving(false);
+    setShowTeacherForm(false);
+    setEditingTeacherId(null);
+    setTeacherFormData(emptyTeacher);
+    fetchTeachers();
+  };
+
   // Unique values for filters
   const institutions = [...new Set(students.map(s => s.institution))].sort();
   const buildings = [...new Set(students.map(s => s.building))].sort();
@@ -199,6 +285,14 @@ export default function AdminDashboard() {
     const matchesBuilding = !filterBuilding || s.building === filterBuilding;
     const matchesFloor = !filterFloor || s.floor === filterFloor;
     return matchesSearch && matchesInstitution && matchesBuilding && matchesFloor;
+  });
+
+  const filteredTeachers = teachers.filter(t => {
+    return (
+      t.name.toLowerCase().includes(teacherSearchQuery.toLowerCase()) ||
+      t.teacher_id.toLowerCase().includes(teacherSearchQuery.toLowerCase()) ||
+      t.department.toLowerCase().includes(teacherSearchQuery.toLowerCase())
+    );
   });
 
   // Search log stats
@@ -244,10 +338,14 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <div className="bg-white rounded-xl p-4 shadow-sm border flex items-center space-x-4">
             <div className="p-3 bg-blue-100 rounded-full"><Users className="w-6 h-6 text-blue-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{students.length}</p><p className="text-sm text-gray-500">Total Students</p></div>
+            <div><p className="text-2xl font-bold text-gray-900">{students.length}</p><p className="text-sm text-gray-500">Students</p></div>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border flex items-center space-x-4">
+            <div className="p-3 bg-teal-100 rounded-full"><UserCheck className="w-6 h-6 text-teal-600" /></div>
+            <div><p className="text-2xl font-bold text-gray-900">{teachers.length}</p><p className="text-sm text-gray-500">Teachers</p></div>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border flex items-center space-x-4">
             <div className="p-3 bg-green-100 rounded-full"><Building className="w-6 h-6 text-green-600" /></div>
@@ -255,11 +353,11 @@ export default function AdminDashboard() {
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border flex items-center space-x-4">
             <div className="p-3 bg-purple-100 rounded-full"><Eye className="w-6 h-6 text-purple-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{totalSearches}</p><p className="text-sm text-gray-500">Total Searches</p></div>
+            <div><p className="text-2xl font-bold text-gray-900">{totalSearches}</p><p className="text-sm text-gray-500">Searches</p></div>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border flex items-center space-x-4">
             <div className="p-3 bg-orange-100 rounded-full"><TrendingUp className="w-6 h-6 text-orange-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{totalSearches > 0 ? Math.round((successfulSearches / totalSearches) * 100) : 0}%</p><p className="text-sm text-gray-500">Search Success</p></div>
+            <div><p className="text-2xl font-bold text-gray-900">{totalSearches > 0 ? Math.round((successfulSearches / totalSearches) * 100) : 0}%</p><p className="text-sm text-gray-500">Success</p></div>
           </div>
         </div>
 
@@ -277,7 +375,8 @@ export default function AdminDashboard() {
         <div className="flex space-x-1 mb-6 bg-white rounded-lg p-1 shadow-sm border">
           {([
             { id: 'students' as Tab, label: 'Students', icon: Users },
-            { id: 'activity' as Tab, label: 'Activity Log', icon: Activity },
+            { id: 'teachers' as Tab, label: 'Teachers', icon: UserCheck },
+            { id: 'activity' as Tab, label: 'Activity', icon: Activity },
             { id: 'search-logs' as Tab, label: 'Search Logs', icon: BarChart3 },
           ]).map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -419,6 +518,79 @@ export default function AdminDashboard() {
           </>
         )}
 
+        {/* Teachers Tab */}
+        {activeTab === 'teachers' && (
+          <>
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by name, ID, or department..."
+                  value={teacherSearchQuery}
+                  onChange={(e) => setTeacherSearchQuery(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
+                />
+              </div>
+              <button
+                onClick={() => { setShowTeacherForm(true); setEditingTeacherId(null); setTeacherFormData(emptyTeacher); }}
+                className="px-6 py-3 bg-gradient-to-r from-teal-600 to-blue-600 text-white rounded-lg hover:from-teal-700 hover:to-blue-700 flex items-center space-x-2 font-semibold shadow-lg transition-all"
+              >
+                <Plus className="w-5 h-5" /><span>Add Teacher</span>
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-500 mb-3">
+              Showing {filteredTeachers.length} of {teachers.length} teachers
+            </p>
+
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      {['ID', 'Name', 'Department', 'Designation', 'Email', 'Phone', 'Office', 'Actions'].map(h => (
+                        <th key={h} className="px-4 py-3 text-left font-semibold text-gray-600 uppercase tracking-wide text-xs">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {filteredTeachers.map(teacher => (
+                      <tr key={teacher.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 font-mono font-bold text-teal-600">{teacher.teacher_id}</td>
+                        <td className="px-4 py-3 font-medium text-gray-900">{teacher.name}</td>
+                        <td className="px-4 py-3 text-gray-600">{teacher.department}</td>
+                        <td className="px-4 py-3 text-gray-600">{teacher.designation}</td>
+                        <td className="px-4 py-3 text-gray-600">{teacher.email || '—'}</td>
+                        <td className="px-4 py-3 text-gray-600">{teacher.phone || '—'}</td>
+                        <td className="px-4 py-3 text-gray-600">{teacher.office_room || '—'}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center space-x-2">
+                            <button onClick={() => handleEditTeacher(teacher)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDeleteTeacher(teacher.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {filteredTeachers.length === 0 && (
+                <div className="text-center py-12 text-gray-500">
+                  <UserCheck className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p className="font-medium">No teachers found</p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
         {/* Activity Log Tab */}
         {activeTab === 'activity' && (
           <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
@@ -468,7 +640,6 @@ export default function AdminDashboard() {
         {/* Search Logs Tab */}
         {activeTab === 'search-logs' && (
           <div className="space-y-6">
-            {/* Top Searched */}
             <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
               <div className="p-4 border-b bg-gray-50">
                 <h2 className="font-semibold text-gray-900 flex items-center space-x-2">
@@ -504,7 +675,6 @@ export default function AdminDashboard() {
               )}
             </div>
 
-            {/* Recent Searches */}
             <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
               <div className="p-4 border-b bg-gray-50">
                 <h2 className="font-semibold text-gray-900 flex items-center space-x-2">
@@ -548,7 +718,7 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* Form Modal */}
+      {/* Student Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -604,6 +774,55 @@ export default function AdminDashboard() {
                   className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 font-medium text-sm flex items-center space-x-2 disabled:opacity-50">
                   {saving ? <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
                     : <><Save className="w-4 h-4" /><span>{editingId ? 'Update' : 'Add'}</span></>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Teacher Form Modal */}
+      {showTeacherForm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">
+                {editingTeacherId ? 'Edit Teacher' : 'Add New Teacher'}
+              </h2>
+              <button onClick={() => { setShowTeacherForm(false); setEditingTeacherId(null); }}
+                className="p-2 hover:bg-gray-100 rounded-full"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={handleTeacherSubmit} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  { key: 'teacher_id', label: 'Teacher ID', placeholder: 'e.g., T001', required: true },
+                  { key: 'name', label: 'Full Name', placeholder: 'e.g., Dr. Rahman', required: true },
+                  { key: 'department', label: 'Department', placeholder: 'e.g., Computer Science', required: false },
+                  { key: 'designation', label: 'Designation', placeholder: 'e.g., Professor', required: false },
+                  { key: 'email', label: 'Email', placeholder: 'e.g., rahman@university.edu', required: false },
+                  { key: 'phone', label: 'Phone', placeholder: 'e.g., +880-1234567890', required: false },
+                  { key: 'office_room', label: 'Office Room', placeholder: 'e.g., Room 301', required: false },
+                ].map(field => (
+                  <div key={field.key}>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">{field.label}</label>
+                    <input
+                      type="text"
+                      value={(teacherFormData as any)[field.key]}
+                      onChange={(e) => setTeacherFormData(prev => ({ ...prev, [field.key]: e.target.value }))}
+                      placeholder={field.placeholder}
+                      required={field.required}
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button type="button" onClick={() => { setShowTeacherForm(false); setEditingTeacherId(null); }}
+                  className="px-6 py-2 border-2 border-gray-200 rounded-lg hover:bg-gray-50 font-medium text-sm">Cancel</button>
+                <button type="submit" disabled={saving}
+                  className="px-6 py-2 bg-gradient-to-r from-teal-600 to-blue-600 text-white rounded-lg hover:from-teal-700 hover:to-blue-700 font-medium text-sm flex items-center space-x-2 disabled:opacity-50">
+                  {saving ? <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                    : <><Save className="w-4 h-4" /><span>{editingTeacherId ? 'Update' : 'Add'}</span></>}
                 </button>
               </div>
             </form>
