@@ -235,21 +235,21 @@ export default function StatusPage() {
         </motion.div>
 
         {/* ─── Stats Grid ──────────────────────────────────── */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="rounded-xl border border-blue-500/20 bg-gradient-to-br from-blue-900/30 to-blue-950/50 p-4 text-center backdrop-blur-sm">
-            <p className="text-3xl font-bold text-blue-400">{uptimePercent}%</p>
-            <p className="text-xs text-blue-300/60 mt-1 uppercase tracking-wide font-semibold">Uptime</p>
+            className="rounded-xl border border-blue-500/20 bg-gradient-to-br from-blue-900/30 to-blue-950/50 p-3 sm:p-4 text-center backdrop-blur-sm">
+            <p className="text-lg sm:text-3xl font-bold text-blue-400 truncate">{uptimePercent}%</p>
+            <p className="text-[10px] sm:text-xs text-blue-300/60 mt-1 uppercase tracking-wide font-semibold">Uptime</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            className="rounded-xl border border-purple-500/20 bg-gradient-to-br from-purple-900/30 to-purple-950/50 p-4 text-center backdrop-blur-sm">
-            <p className="text-3xl font-bold text-purple-400">{avgResponseTime}<span className="text-lg">ms</span></p>
-            <p className="text-xs text-purple-300/60 mt-1 uppercase tracking-wide font-semibold">Avg Response</p>
+            className="rounded-xl border border-purple-500/20 bg-gradient-to-br from-purple-900/30 to-purple-950/50 p-3 sm:p-4 text-center backdrop-blur-sm">
+            <p className="text-lg sm:text-3xl font-bold text-purple-400">{avgResponseTime}<span className="text-sm sm:text-lg">ms</span></p>
+            <p className="text-[10px] sm:text-xs text-purple-300/60 mt-1 uppercase tracking-wide font-semibold leading-tight">Avg<br className="sm:hidden" /> Response</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-            className="rounded-xl border border-pink-500/20 bg-gradient-to-br from-pink-900/30 to-pink-950/50 p-4 text-center backdrop-blur-sm">
-            <p className="text-3xl font-bold text-pink-400">{totalChecks}</p>
-            <p className="text-xs text-pink-300/60 mt-1 uppercase tracking-wide font-semibold">Total Checks</p>
+            className="rounded-xl border border-pink-500/20 bg-gradient-to-br from-pink-900/30 to-pink-950/50 p-3 sm:p-4 text-center backdrop-blur-sm">
+            <p className="text-lg sm:text-3xl font-bold text-pink-400">{totalChecks}</p>
+            <p className="text-[10px] sm:text-xs text-pink-300/60 mt-1 uppercase tracking-wide font-semibold leading-tight">Total<br className="sm:hidden" /> Checks</p>
           </motion.div>
         </div>
 
