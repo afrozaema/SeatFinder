@@ -354,26 +354,26 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-4 shadow-sm border flex items-center space-x-4">
-            <div className="p-3 bg-blue-100 rounded-full"><Users className="w-6 h-6 text-blue-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{students.length}</p><p className="text-sm text-gray-500">Students</p></div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+          <div className="bg-white rounded-xl p-3 shadow-sm border flex flex-col items-center text-center gap-2">
+            <div className="p-2 bg-blue-100 rounded-full"><Users className="w-5 h-5 text-blue-600" /></div>
+            <div><p className="text-xl font-bold text-gray-900">{students.length}</p><p className="text-xs text-gray-500">Students</p></div>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border flex items-center space-x-4">
-            <div className="p-3 bg-teal-100 rounded-full"><UserCheck className="w-6 h-6 text-teal-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{teachers.length}</p><p className="text-sm text-gray-500">Teachers</p></div>
+          <div className="bg-white rounded-xl p-3 shadow-sm border flex flex-col items-center text-center gap-2">
+            <div className="p-2 bg-teal-100 rounded-full"><UserCheck className="w-5 h-5 text-teal-600" /></div>
+            <div><p className="text-xl font-bold text-gray-900">{teachers.length}</p><p className="text-xs text-gray-500">Teachers</p></div>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border flex items-center space-x-4">
-            <div className="p-3 bg-green-100 rounded-full"><Building className="w-6 h-6 text-green-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{institutions.length}</p><p className="text-sm text-gray-500">Institutions</p></div>
+          <div className="bg-white rounded-xl p-3 shadow-sm border flex flex-col items-center text-center gap-2">
+            <div className="p-2 bg-green-100 rounded-full"><Building className="w-5 h-5 text-green-600" /></div>
+            <div><p className="text-xl font-bold text-gray-900">{institutions.length}</p><p className="text-xs text-gray-500">Institutions</p></div>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border flex items-center space-x-4">
-            <div className="p-3 bg-purple-100 rounded-full"><Eye className="w-6 h-6 text-purple-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{totalSearches}</p><p className="text-sm text-gray-500">Searches</p></div>
+          <div className="bg-white rounded-xl p-3 shadow-sm border flex flex-col items-center text-center gap-2">
+            <div className="p-2 bg-purple-100 rounded-full"><Eye className="w-5 h-5 text-purple-600" /></div>
+            <div><p className="text-xl font-bold text-gray-900">{totalSearches}</p><p className="text-xs text-gray-500">Searches</p></div>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border flex items-center space-x-4">
-            <div className="p-3 bg-orange-100 rounded-full"><TrendingUp className="w-6 h-6 text-orange-600" /></div>
-            <div><p className="text-2xl font-bold text-gray-900">{totalSearches > 0 ? Math.round((successfulSearches / totalSearches) * 100) : 0}%</p><p className="text-sm text-gray-500">Success</p></div>
+          <div className="bg-white rounded-xl p-3 shadow-sm border flex flex-col items-center text-center gap-2 col-span-2 sm:col-span-1">
+            <div className="p-2 bg-orange-100 rounded-full"><TrendingUp className="w-5 h-5 text-orange-600" /></div>
+            <div><p className="text-xl font-bold text-gray-900">{totalSearches > 0 ? Math.round((successfulSearches / totalSearches) * 100) : 0}%</p><p className="text-xs text-gray-500">Success</p></div>
           </div>
         </div>
 
