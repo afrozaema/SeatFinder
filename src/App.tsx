@@ -10,6 +10,7 @@ import TeacherPage from "./pages/TeacherPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import StatusPage from "./pages/StatusPage";
+import DatabaseViewer from "./pages/DatabaseViewer";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/status" element={<StatusPage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/database" element={<DatabaseViewer />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
