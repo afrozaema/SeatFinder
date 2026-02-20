@@ -388,19 +388,19 @@ function StatsView({ data, tableName }: { data: any[]; tableName: TableName }) {
   return (
     <div className="flex-1 overflow-auto p-4">
       {/* Summary cards */}
-      <div className="grid grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         {[
-          { label: 'Total Rows', value: data.length, icon: Hash, color: 'bg-blue-50 text-blue-700 border-blue-200' },
-          { label: 'Columns', value: columns.length, icon: Columns, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-          { label: 'Table', value: tableName, icon: Table2, color: 'bg-purple-50 text-purple-700 border-purple-200' },
-          { label: 'Null Cols', value: columns.filter(c => data.some(r => r[c] === null)).length, icon: AlertCircle, color: 'bg-amber-50 text-amber-700 border-amber-200' },
+          { label: 'Total Rows', value: data.length, icon: Hash, color: 'bg-blue-50 text-blue-700 border-blue-200', iconColor: 'text-blue-500' },
+          { label: 'Columns', value: columns.length, icon: Columns, color: 'bg-emerald-50 text-emerald-700 border-emerald-200', iconColor: 'text-emerald-500' },
+          { label: 'Table', value: tableName, icon: Table2, color: 'bg-purple-50 text-purple-700 border-purple-200', iconColor: 'text-purple-500' },
+          { label: 'Null Cols', value: columns.filter(c => data.some(r => r[c] === null)).length, icon: AlertCircle, color: 'bg-amber-50 text-amber-700 border-amber-200', iconColor: 'text-amber-500' },
         ].map(s => (
           <div key={s.label} className={`border rounded-xl p-3 ${s.color}`}>
-            <div className="flex items-center gap-2 mb-1">
-              <s.icon className="w-3.5 h-3.5" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider">{s.label}</span>
+            <div className="flex items-center gap-1.5 mb-1">
+              <s.icon className={`w-3.5 h-3.5 ${s.iconColor}`} />
+              <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider truncate">{s.label}</span>
             </div>
-            <p className="text-lg font-bold font-mono">{s.value}</p>
+            <p className="text-base sm:text-lg font-bold font-mono truncate">{s.value}</p>
           </div>
         ))}
       </div>
