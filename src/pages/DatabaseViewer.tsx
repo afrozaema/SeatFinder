@@ -568,9 +568,9 @@ function SqlEditor() {
   };
 
   return (
-    <div className="flex h-full overflow-hidden">
-      {/* Sidebar */}
-      <div className="w-52 shrink-0 bg-gray-50 border-r border-gray-200 flex flex-col overflow-hidden">
+    <div className="flex h-full overflow-hidden flex-col md:flex-row">
+      {/* Sidebar - hidden on mobile, collapsible */}
+      <div className="hidden md:flex w-52 shrink-0 bg-gray-50 border-r border-gray-200 flex-col overflow-hidden">
         <div className="px-3 py-3 border-b border-gray-200">
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Query Templates</p>
         </div>
@@ -590,21 +590,37 @@ function SqlEditor() {
       </div>
 
       {/* Editor area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Toolbar */}
-        <div className="bg-gray-800 px-4 py-2 flex items-center gap-2 border-b border-gray-700">
-          <Code2 className="w-3.5 h-3.5 text-gray-400" />
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${queryTypeBadge[queryType]} text-white`}>{queryType}</span>
-          <span className="text-[11px] text-gray-400 font-mono flex-1">SQL Editor — all statements supported</span>
+        <div className="bg-gray-800 px-3 md:px-4 py-2 flex items-center gap-1.5 md:gap-2 border-b border-gray-700 flex-wrap">
+          <Code2 className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${queryTypeBadge[queryType]} text-white shrink-0`}>{queryType}</span>
+          <span className="text-[11px] text-gray-400 font-mono hidden sm:inline">SQL Editor</span>
+          <div className="flex-1" />
           <button onClick={runQuery} disabled={running}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-[12px] font-semibold transition-colors disabled:opacity-50">
-            {running ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />} Run (Ctrl+Enter)
+            className="flex items-center gap-1 md:gap-1.5 px-2.5 md:px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] md:text-[12px] font-semibold transition-colors disabled:opacity-50 shrink-0">
+            {running ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">Run (Ctrl+Enter)</span>
+            <span className="sm:hidden">Run</span>
           </button>
           {results && results.length > 0 && (
-            <button onClick={exportCSV} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 text-white text-[12px] transition-colors">
-              <Download className="w-3.5 h-3.5" /> Export CSV
+            <button onClick={exportCSV} className="flex items-center gap-1 md:gap-1.5 px-2.5 md:px-3 py-1.5 rounded-md bg-gray-700 hover:bg-gray-600 text-white text-[11px] md:text-[12px] transition-colors shrink-0">
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Export CSV</span>
             </button>
           )}
+        </div>
+
+        {/* Mobile: template selector */}
+        <div className="md:hidden bg-gray-50 border-b border-gray-200 px-3 py-1.5 overflow-x-auto">
+          <div className="flex gap-1.5 min-w-max">
+            {SNIPPET_GROUPS.map(group => group.items.map((s, i) => (
+              <button key={`${group.group}-${i}`} onClick={() => setSql(s.sql)}
+                className="px-2 py-1 bg-white border border-gray-200 rounded text-[10px] text-gray-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 whitespace-nowrap transition-all">
+                {s.label}
+              </button>
+            )))}
+          </div>
         </div>
 
         {/* CodeMirror SQL Editor */}
@@ -800,50 +816,56 @@ function TableDataView({ tableName, editable, onCountChange }: {
       ) : (
         <>
           {/* Toolbar */}
-          <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-2 flex-wrap">
+          <div className="bg-white border-b border-gray-200 px-2 md:px-4 py-2 flex items-center gap-1.5 md:gap-2 flex-wrap">
             {editable && (
               <>
                 <button onClick={() => setInsertOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-semibold transition-colors shadow-sm">
-                  <Plus className="w-3.5 h-3.5" /> Insert
+                  className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] md:text-[12px] font-semibold transition-colors shadow-sm">
+                  <Plus className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                  <span className="hidden sm:inline">Insert</span>
+                  <span className="sm:hidden">+</span>
                 </button>
                 <button onClick={() => setCsvOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-semibold transition-colors shadow-sm">
-                  <Upload className="w-3.5 h-3.5" /> Import CSV
+                  className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] md:text-[12px] font-semibold transition-colors shadow-sm">
+                  <Upload className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                  <span className="hidden sm:inline">Import CSV</span>
+                  <span className="sm:hidden">CSV</span>
                 </button>
                 {selectedIds.size > 0 && (
                   <button onClick={() => setDeleteConfirm(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[12px] font-semibold transition-colors">
-                    <Trash2 className="w-3.5 h-3.5" /> Delete ({selectedIds.size})
+                    className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[11px] md:text-[12px] font-semibold transition-colors">
+                    <Trash2 className="w-3 h-3 md:w-3.5 md:h-3.5" /> Delete ({selectedIds.size})
                   </button>
                 )}
               </>
             )}
 
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 md:w-3.5 md:h-3.5 text-gray-400" />
               <input value={searchQ} onChange={e => { setSearchQ(e.target.value); setPage(0); }}
                 placeholder="Search…"
-                className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-[12px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 w-44" />
+                className="pl-7 md:pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-[11px] md:text-[12px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 w-28 md:w-44" />
             </div>
 
             <div className="flex-1" />
 
             {/* Row limit */}
-            <div className="flex items-center gap-1.5 text-[12px] text-gray-500">
-              <span>Show</span>
+            <div className="flex items-center gap-1 md:gap-1.5 text-[11px] md:text-[12px] text-gray-500">
+              <span className="hidden sm:inline">Show</span>
               <select value={rowLimit} onChange={e => setRowLimit(Number(e.target.value))}
-                className="border border-gray-200 rounded-lg px-2 py-1 text-[12px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                className="border border-gray-200 rounded-lg px-1.5 md:px-2 py-1 text-[11px] md:text-[12px] text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 {ROW_LIMITS.map(l => <option key={l} value={l}>{l}</option>)}
               </select>
-              <span>rows</span>
+              <span className="hidden sm:inline">rows</span>
             </div>
 
             {/* Column visibility */}
             <div className="relative">
               <button onClick={() => setShowColPicker(!showColPicker)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[12px] transition-all ${showColPicker ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
-                <Columns className="w-3.5 h-3.5" /> Columns {hiddenCols.size > 0 && <span className="text-blue-600 font-bold">({allColumns.length - hiddenCols.size}/{allColumns.length})</span>}
+                className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1.5 rounded-lg border text-[11px] md:text-[12px] transition-all ${showColPicker ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+                <Columns className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                <span className="hidden sm:inline">Columns</span>
+                {hiddenCols.size > 0 && <span className="text-blue-600 font-bold">({allColumns.length - hiddenCols.size}/{allColumns.length})</span>}
               </button>
               {showColPicker && (
                 <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-20 p-3 w-52">
@@ -861,9 +883,9 @@ function TableDataView({ tableName, editable, onCountChange }: {
               )}
             </div>
 
-            <span className="text-[12px] text-gray-400">{sorted.length} rows</span>
-            <button onClick={fetchData} className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 transition-all"><RefreshCw className="w-3.5 h-3.5" /></button>
-            <button onClick={exportCSV} className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 transition-all" title="Export CSV"><Download className="w-3.5 h-3.5" /></button>
+            <span className="text-[11px] md:text-[12px] text-gray-400">{sorted.length} rows</span>
+            <button onClick={fetchData} className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 transition-all"><RefreshCw className="w-3 h-3 md:w-3.5 md:h-3.5" /></button>
+            <button onClick={exportCSV} className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 transition-all" title="Export CSV"><Download className="w-3 h-3 md:w-3.5 md:h-3.5" /></button>
           </div>
 
           {/* Table */}
@@ -1225,6 +1247,7 @@ export default function DatabaseViewer() {
   const [selectedTable, setSelectedTable] = useState<TableName>(ALL_TABLES[0].name);
   const [tableCounts, setTableCounts] = useState<Record<string, number>>({});
   const [expandedDb, setExpandedDb]   = useState(true);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const isAuthenticated = !loading && !adminLoading && !!user && isAdmin;
 
@@ -1294,92 +1317,159 @@ export default function DatabaseViewer() {
 
   const currentMeta = ALL_TABLES.find(t => t.name === selectedTable) ?? ALL_TABLES[0];
 
+  const SidebarContent = () => (
+    <>
+      <div className="px-3 py-2 border-b border-gray-700">
+        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Object Browser</p>
+      </div>
+      <div className="flex-1 overflow-y-auto py-1">
+        <button onClick={() => setExpandedDb(!expandedDb)}
+          className="w-full flex items-center gap-1.5 px-2.5 py-2 hover:bg-gray-700 transition-colors text-left">
+          {expandedDb ? <ChevronDown className="w-3 h-3 text-gray-400" /> : <ChevronRight className="w-3 h-3 text-gray-400" />}
+          <Database className="w-3.5 h-3.5 text-yellow-400" />
+          <span className="text-[12px] text-gray-200 font-semibold">ju_database</span>
+        </button>
+        {expandedDb && (
+          <div className="ml-3 border-l border-gray-700 pl-1 py-1 space-y-0.5">
+            <div className="flex items-center gap-1.5 px-2 py-1">
+              <List className="w-3 h-3 text-gray-500" />
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Tables ({ALL_TABLES.length})</span>
+            </div>
+            {ALL_TABLES.map(t => {
+              const Icon = t.icon;
+              const isActive = selectedTable === t.name;
+              return (
+                <button key={t.name} onClick={() => { setSelectedTable(t.name); setMobileSidebarOpen(false); }}
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md transition-all text-left ${isActive ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-gray-200'}`}>
+                  <Icon className="w-3 h-3 shrink-0" style={{ color: isActive ? 'white' : t.color }} />
+                  <span className="text-[12px] flex-1 truncate font-mono">{t.name}</span>
+                  <span className={`text-[10px] px-1 rounded ${isActive ? 'bg-blue-500 text-blue-100' : 'bg-gray-700 text-gray-500'}`}>{tableCounts[t.name] ?? '…'}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+      <div className="border-t border-gray-700 px-3 py-2 text-[10px] text-gray-500">
+        <p>PostgreSQL · Cloud DB</p>
+        <p className="text-emerald-500 flex items-center gap-1 mt-0.5"><CheckCircle2 className="w-2.5 h-2.5" /> Connected</p>
+      </div>
+    </>
+  );
+
   return (
     <div className="h-screen bg-gray-100 flex flex-col overflow-hidden font-mono">
       {/* Top bar */}
-      <header className="bg-gray-900 text-white flex items-center px-4 py-2.5 gap-4 shrink-0 border-b border-gray-700 select-none">
-        <div className="flex items-center gap-2">
-          <Database className="w-5 h-5 text-blue-400" />
-          <span className="font-bold text-sm tracking-wide text-blue-300">JU Database Manager</span>
+      <header className="bg-gray-900 text-white flex items-center px-3 md:px-4 py-2.5 gap-2 md:gap-4 shrink-0 border-b border-gray-700 select-none">
+        {/* Mobile: hamburger for table browser */}
+        {activeView === 'browser' && (
+          <button onClick={() => setMobileSidebarOpen(true)}
+            className="md:hidden flex items-center justify-center w-8 h-8 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 transition-colors shrink-0">
+            <List className="w-4 h-4" />
+          </button>
+        )}
+        <div className="flex items-center gap-2 shrink-0">
+          <Database className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
+          <span className="font-bold text-xs md:text-sm tracking-wide text-blue-300 hidden sm:block">JU Database Manager</span>
+          <span className="font-bold text-xs tracking-wide text-blue-300 sm:hidden">JU DB</span>
         </div>
-        <div className="h-4 w-px bg-gray-700" />
-        <div className="flex items-center gap-1">
+        <div className="hidden md:block h-4 w-px bg-gray-700" />
+        {/* Nav tabs */}
+        <div className="flex items-center gap-0.5 md:gap-1 flex-1 md:flex-none overflow-x-auto">
           <button onClick={() => setActiveView('browser')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold transition-colors ${activeView === 'browser' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
-            <Table2 className="w-3.5 h-3.5" /> Table Browser
+            className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1.5 rounded-md text-[11px] md:text-[12px] font-semibold transition-colors whitespace-nowrap ${activeView === 'browser' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
+            <Table2 className="w-3 h-3 md:w-3.5 md:h-3.5" />
+            <span className="hidden sm:inline">Table Browser</span>
+            <span className="sm:hidden">Tables</span>
           </button>
           <button onClick={() => setActiveView('sql')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold transition-colors ${activeView === 'sql' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
-            <Code2 className="w-3.5 h-3.5" /> SQL Editor
+            className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1.5 rounded-md text-[11px] md:text-[12px] font-semibold transition-colors whitespace-nowrap ${activeView === 'sql' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
+            <Code2 className="w-3 h-3 md:w-3.5 md:h-3.5" />
+            <span>SQL</span>
           </button>
           <button onClick={() => setActiveView('users')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold transition-colors ${activeView === 'users' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
-            <Users className="w-3.5 h-3.5" /> Users
+            className={`flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1.5 rounded-md text-[11px] md:text-[12px] font-semibold transition-colors whitespace-nowrap ${activeView === 'users' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
+            <Users className="w-3 h-3 md:w-3.5 md:h-3.5" />
+            <span>Users</span>
           </button>
         </div>
-        <div className="flex-1" />
-        <div className="flex items-center gap-2 text-[11px] text-gray-400">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-          <span>{user?.email}</span>
+        <div className="flex-1 hidden md:block" />
+        <div className="hidden sm:flex items-center gap-2 text-[10px] md:text-[11px] text-gray-400 shrink-0">
+          <CheckCircle2 className="w-3 h-3 md:w-3.5 md:h-3.5 text-emerald-400" />
+          <span className="max-w-28 truncate">{user?.email}</span>
         </div>
-        <button onClick={() => signOut()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all">
-          <LogOut className="w-3.5 h-3.5" /> Logout
+        <button onClick={() => signOut()} className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1.5 rounded-md text-[11px] md:text-[12px] text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all shrink-0">
+          <LogOut className="w-3 h-3 md:w-3.5 md:h-3.5" />
+          <span className="hidden sm:inline">Logout</span>
         </button>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - only for browser view */}
-        {activeView === 'browser' && (
-          <aside className="w-52 shrink-0 bg-gray-800 border-r border-gray-700 flex flex-col overflow-hidden">
-            <div className="px-3 py-2 border-b border-gray-700">
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Object Browser</p>
-            </div>
-            <div className="flex-1 overflow-y-auto py-1">
-              <button onClick={() => setExpandedDb(!expandedDb)}
-                className="w-full flex items-center gap-1.5 px-2.5 py-2 hover:bg-gray-700 transition-colors text-left">
-                {expandedDb ? <ChevronDown className="w-3 h-3 text-gray-400" /> : <ChevronRight className="w-3 h-3 text-gray-400" />}
-                <Database className="w-3.5 h-3.5 text-yellow-400" />
-                <span className="text-[12px] text-gray-200 font-semibold">ju_database</span>
-              </button>
-              {expandedDb && (
-                <div className="ml-3 border-l border-gray-700 pl-1 py-1 space-y-0.5">
-                  <div className="flex items-center gap-1.5 px-2 py-1">
-                    <List className="w-3 h-3 text-gray-500" />
-                    <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Tables ({ALL_TABLES.length})</span>
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Mobile sidebar overlay */}
+        {mobileSidebarOpen && activeView === 'browser' && (
+          <div className="fixed inset-0 z-40 md:hidden" onClick={() => setMobileSidebarOpen(false)}>
+            <div className="absolute inset-0 bg-black/60" />
+            <aside className="absolute left-0 top-0 bottom-0 w-64 bg-gray-800 border-r border-gray-700 flex flex-col overflow-hidden z-50" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Object Browser</p>
+                <button onClick={() => setMobileSidebarOpen(false)} className="p-1 rounded text-gray-400 hover:text-white">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto py-1">
+                <button onClick={() => setExpandedDb(!expandedDb)}
+                  className="w-full flex items-center gap-1.5 px-2.5 py-2 hover:bg-gray-700 transition-colors text-left">
+                  {expandedDb ? <ChevronDown className="w-3 h-3 text-gray-400" /> : <ChevronRight className="w-3 h-3 text-gray-400" />}
+                  <Database className="w-3.5 h-3.5 text-yellow-400" />
+                  <span className="text-[12px] text-gray-200 font-semibold">ju_database</span>
+                </button>
+                {expandedDb && (
+                  <div className="ml-3 border-l border-gray-700 pl-1 py-1 space-y-0.5">
+                    <div className="flex items-center gap-1.5 px-2 py-1">
+                      <List className="w-3 h-3 text-gray-500" />
+                      <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Tables ({ALL_TABLES.length})</span>
+                    </div>
+                    {ALL_TABLES.map(t => {
+                      const Icon = t.icon;
+                      const isActive = selectedTable === t.name;
+                      return (
+                        <button key={t.name} onClick={() => { setSelectedTable(t.name); setMobileSidebarOpen(false); }}
+                          className={`w-full flex items-center gap-2 px-2 py-2 rounded-md transition-all text-left ${isActive ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-gray-200'}`}>
+                          <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: isActive ? 'white' : t.color }} />
+                          <span className="text-[13px] flex-1 truncate font-mono">{t.name}</span>
+                          <span className={`text-[10px] px-1.5 rounded ${isActive ? 'bg-blue-500 text-blue-100' : 'bg-gray-700 text-gray-500'}`}>{tableCounts[t.name] ?? '…'}</span>
+                        </button>
+                      );
+                    })}
                   </div>
-                  {ALL_TABLES.map(t => {
-                    const Icon = t.icon;
-                    const isActive = selectedTable === t.name;
-                    return (
-                      <button key={t.name} onClick={() => setSelectedTable(t.name)}
-                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md transition-all text-left ${isActive ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-gray-200'}`}>
-                        <Icon className="w-3 h-3 shrink-0" style={{ color: isActive ? 'white' : t.color }} />
-                        <span className="text-[12px] flex-1 truncate font-mono">{t.name}</span>
-                        <span className={`text-[10px] px-1 rounded ${isActive ? 'bg-blue-500 text-blue-100' : 'bg-gray-700 text-gray-500'}`}>{tableCounts[t.name] ?? '…'}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-            <div className="border-t border-gray-700 px-3 py-2 text-[10px] text-gray-500">
-              <p>PostgreSQL · Cloud DB</p>
-              <p className="text-emerald-500 flex items-center gap-1 mt-0.5"><CheckCircle2 className="w-2.5 h-2.5" /> Connected</p>
-            </div>
+                )}
+              </div>
+              <div className="border-t border-gray-700 px-3 py-2 text-[10px] text-gray-500">
+                <p>PostgreSQL · Cloud DB</p>
+                <p className="text-emerald-500 flex items-center gap-1 mt-0.5"><CheckCircle2 className="w-2.5 h-2.5" /> Connected</p>
+              </div>
+            </aside>
+          </div>
+        )}
+
+        {/* Desktop sidebar - only for browser view */}
+        {activeView === 'browser' && (
+          <aside className="hidden md:flex w-52 shrink-0 bg-gray-800 border-r border-gray-700 flex-col overflow-hidden">
+            <SidebarContent />
           </aside>
         )}
 
         {/* Main */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-white">
+        <main className="flex-1 flex flex-col overflow-hidden bg-white min-w-0">
           {activeView === 'sql' ? (
             <SqlEditor />
           ) : activeView === 'users' ? (
             <UserManager />
           ) : (
             <>
-              <div className="bg-gray-100 border-b border-gray-200 px-4 flex items-center gap-0 h-9 shrink-0">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-b-0 border-gray-200 rounded-t-md -mb-px text-[12px] text-gray-700 font-semibold">
-                  <Table2 className="w-3.5 h-3.5" style={{ color: currentMeta.color }} />
+              <div className="bg-gray-100 border-b border-gray-200 px-2 md:px-4 flex items-center gap-0 h-9 shrink-0 overflow-x-auto">
+                <div className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 bg-white border border-b-0 border-gray-200 rounded-t-md -mb-px text-[11px] md:text-[12px] text-gray-700 font-semibold whitespace-nowrap">
+                  <Table2 className="w-3 h-3 md:w-3.5 md:h-3.5 shrink-0" style={{ color: currentMeta.color }} />
                   {selectedTable}
                   {!currentMeta.editable && <span className="ml-1 px-1 rounded text-[10px] bg-gray-100 text-gray-400">readonly</span>}
                 </div>
