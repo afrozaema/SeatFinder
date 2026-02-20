@@ -914,10 +914,10 @@ function TableDataView({ tableName, editable, onCountChange }: {
                         ))}
                         {editable && (
                           <td className="px-2 py-1.5 text-center sticky right-0 border-l border-gray-100 bg-white group-hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => setEditRow(row)} className="p-1 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-100 transition-all" title="Edit"><Pencil className="w-3.5 h-3.5" /></button>
-                              <button onClick={() => handleDuplicate(row)} className="p-1 rounded text-gray-400 hover:text-emerald-600 hover:bg-emerald-100 transition-all" title="Duplicate"><Copy className="w-3.5 h-3.5" /></button>
-                              <button onClick={() => { setEditRow(row); setDeleteConfirm(true); }} className="p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-100 transition-all" title="Delete"><Trash2 className="w-3.5 h-3.5" /></button>
+                            <div className="flex items-center justify-center gap-1">
+                              <button onClick={() => setEditRow(row)} className="p-1.5 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white transition-all" title="Edit"><Pencil className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => handleDuplicate(row)} className="p-1.5 rounded-md bg-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all" title="Duplicate"><Copy className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => { setEditRow(row); setDeleteConfirm(true); }} className="p-1.5 rounded-md bg-red-100 text-red-600 hover:bg-red-600 hover:text-white transition-all" title="Delete"><Trash2 className="w-3.5 h-3.5" /></button>
                             </div>
                           </td>
                         )}
