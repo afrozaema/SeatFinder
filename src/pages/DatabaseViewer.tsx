@@ -632,7 +632,7 @@ function SqlEditor() {
             'Authorization': `Bearer ${session.access_token}`,
             'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
-          body: JSON.stringify({ sql }),
+          body: JSON.stringify({ sql: sql.trim().replace(/;+$/, '') }),
         }
       );
       setExecTime(Math.round(performance.now() - t0));
