@@ -395,7 +395,7 @@ function StatsView({ data, tableName }: { data: any[]; tableName: TableName }) {
           { label: 'Table', value: tableName, icon: Table2, color: 'bg-purple-50 text-purple-700 border-purple-200', iconColor: 'text-purple-500' },
           { label: 'Null Cols', value: columns.filter(c => data.some(r => r[c] === null)).length, icon: AlertCircle, color: 'bg-amber-50 text-amber-700 border-amber-200', iconColor: 'text-amber-500' },
         ].map(s => (
-          <div key={s.label} className={`border rounded-xl p-3 ${s.color}`}>
+          <div key={s.label} className={`border rounded-xl p-3 ${s.color} flex flex-col items-center text-center`}>
             <div className="flex items-center gap-1.5 mb-1">
               <s.icon className={`w-3.5 h-3.5 ${s.iconColor}`} />
               <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider truncate">{s.label}</span>
