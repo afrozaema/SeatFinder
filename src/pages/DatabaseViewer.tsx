@@ -1,4 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import CodeMirror from '@uiw/react-codemirror';
+import { sql as sqlLang } from '@codemirror/lang-sql';
+import { vscodeDark } from '@uiw/codemirror-theme-vscode';
+import { EditorView, keymap } from '@codemirror/view';
+import { Prec } from '@codemirror/state';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -431,36 +436,9 @@ function StatsView({ data, tableName }: { data: any[]; tableName: TableName }) {
   );
 }
 
-// ─── SQL Autocomplete Data ────────────────────────────────────────────────────
-const SQL_KEYWORDS = [
-  'SELECT','FROM','WHERE','INSERT','INTO','VALUES','UPDATE','SET','DELETE','JOIN',
-  'LEFT','RIGHT','INNER','OUTER','FULL','ON','AND','OR','NOT','IN','IS','NULL',
-  'ORDER','BY','GROUP','HAVING','LIMIT','OFFSET','DISTINCT','AS','CASE','WHEN',
-  'THEN','ELSE','END','EXISTS','BETWEEN','LIKE','ILIKE','COUNT','SUM','AVG',
-  'MIN','MAX','COALESCE','NOW','CURRENT_DATE','RETURNING','WITH','CREATE','TABLE',
-  'ALTER','DROP','TRUNCATE','INDEX','UNIQUE','PRIMARY','KEY','FOREIGN','REFERENCES',
-  'CONSTRAINT','DEFAULT','NOT NULL','CASCADE','ON DELETE','ON UPDATE','TRUE','FALSE',
-  'INTERVAL','DATE','TIMESTAMP','TEXT','INTEGER','UUID','BOOLEAN','JSONB',
-  'gen_random_uuid','CURRENT_TIMESTAMP','EXTRACT','TO_CHAR','TO_DATE',
-];
 
-const TABLE_NAMES = ['students','teachers','search_logs','activity_logs','site_settings','incidents','keep_alive_log','user_roles'];
-
-const TABLE_COLUMNS: Record<string, string[]> = {
-  students:      ['id','roll_number','name','institution','building','room','floor','report_time','start_time','end_time','directions','map_url','unit','exam_date','created_at','updated_at'],
-  teachers:      ['id','teacher_id','name','department','designation','email','phone','office_room','created_at','updated_at'],
-  search_logs:   ['id','roll_number','found','created_at'],
-  activity_logs: ['id','user_id','action','entity_type','entity_id','details','created_at'],
-  site_settings: ['id','key','value','created_at'],
-  incidents:     ['id','title','description','severity','status','started_at','resolved_at','created_at','updated_at'],
-  keep_alive_log:['id','pinged_at','status','response_time_ms','record_count','error_message'],
-  user_roles:    ['id','user_id','role','created_at'],
-};
-
-// ─── SQL Editor ───────────────────────────────────────────────────────────────
 type SqlGroup = { group: string; items: { label: string; sql: string; type: 'select' | 'insert' | 'update' | 'delete' }[] };
 
-type AcItem = { text: string; kind: 'keyword' | 'table' | 'column' };
 
 function SqlEditor() {
   const [sql, setSql] = useState('SELECT * FROM students\nORDER BY created_at DESC\nLIMIT 50;');
@@ -471,105 +449,15 @@ function SqlEditor() {
   const [error, setError] = useState('');
   const [running, setRunning] = useState(false);
   const [execTime, setExecTime] = useState<number | null>(null);
+  const runQueryRef = useRef<() => void>(() => {});
 
-  // Autocomplete state
-  const [acItems, setAcItems] = useState<AcItem[]>([]);
-  const [acIndex, setAcIndex] = useState(0);
-  const [acWord, setAcWord] = useState('');
-  const [acPos, setAcPos] = useState<{ top: number; left: number } | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const acRef = useRef<HTMLDivElement>(null);
-
-  // ── Autocomplete helpers ──────────────────────────────────────────────────
-  const getCaretPixelPos = (ta: HTMLTextAreaElement, pos: number) => {
-    const div = document.createElement('div');
-    const style = window.getComputedStyle(ta);
-    ['fontFamily','fontSize','fontWeight','lineHeight','letterSpacing',
-     'paddingTop','paddingLeft','paddingRight','borderTopWidth','borderLeftWidth',
-     'boxSizing','whiteSpace','wordWrap','overflowWrap'].forEach(p => {
-      (div.style as any)[p] = (style as any)[p];
-    });
-    div.style.position = 'absolute';
-    div.style.visibility = 'hidden';
-    div.style.whiteSpace = 'pre-wrap';
-    div.style.width = ta.clientWidth + 'px';
-    div.style.height = 'auto';
-    const textBefore = ta.value.substring(0, pos);
-    div.textContent = textBefore;
-    const span = document.createElement('span');
-    span.textContent = '|';
-    div.appendChild(span);
-    document.body.appendChild(div);
-    const taRect = ta.getBoundingClientRect();
-    const spanRect = span.getBoundingClientRect();
-    document.body.removeChild(div);
-    return {
-      top: spanRect.top - taRect.top + ta.scrollTop,
-      left: spanRect.left - taRect.left + ta.scrollLeft,
-    };
-  };
-
-  const computeAC = (value: string, cursor: number) => {
-    const before = value.slice(0, cursor);
-    const match = before.match(/[\w$]+$/);
-    const word = match ? match[0] : '';
-    if (word.length < 1) { setAcItems([]); setAcWord(''); setAcPos(null); return; }
-    const up = word.toUpperCase();
-
-    const fromMatch = value.toUpperCase().match(/(?:FROM|UPDATE|INTO|JOIN)\s+(\w+)/g);
-    const contextTables: string[] = [];
-    if (fromMatch) {
-      fromMatch.forEach(m => {
-        const t = m.split(/\s+/)[1]?.toLowerCase();
-        if (t && TABLE_COLUMNS[t]) contextTables.push(t);
-      });
-    }
-
-    const items: AcItem[] = [];
-    SQL_KEYWORDS
-      .filter(k => k.startsWith(up) && k !== up)
-      .slice(0, 12)
-      .forEach(k => items.push({ text: k, kind: 'keyword' }));
-    TABLE_NAMES
-      .filter(t => t.toUpperCase().startsWith(up) && t.toUpperCase() !== up)
-      .slice(0, 6)
-      .forEach(t => items.push({ text: t, kind: 'table' }));
-    contextTables.forEach(t => {
-      TABLE_COLUMNS[t]
-        ?.filter(c => c.toUpperCase().startsWith(up) && c.toUpperCase() !== up)
-        .slice(0, 8)
-        .forEach(c => items.push({ text: c, kind: 'column' }));
-    });
-
-    if (items.length === 0) { setAcItems([]); setAcWord(''); setAcPos(null); return; }
-    setAcItems(items);
-    setAcWord(word);
-    setAcIndex(0);
-
-    if (textareaRef.current) {
-      const pos = getCaretPixelPos(textareaRef.current, cursor - word.length);
-      const lh = parseInt(window.getComputedStyle(textareaRef.current).lineHeight) || 20;
-      setAcPos({ top: pos.top + lh + 4, left: pos.left });
-    }
-  };
-
-  const applyAC = (item: AcItem) => {
-    if (!textareaRef.current) return;
-    const cursor = textareaRef.current.selectionStart;
-    const before = sql.slice(0, cursor);
-    const after  = sql.slice(cursor);
-    const trimmed = before.slice(0, before.length - acWord.length);
-    const inserted = trimmed + item.text + after;
-    setSql(inserted);
-    setAcItems([]);
-    setAcPos(null);
-    setTimeout(() => {
-      if (!textareaRef.current) return;
-      const newPos = trimmed.length + item.text.length;
-      textareaRef.current.setSelectionRange(newPos, newPos);
-      textareaRef.current.focus();
-    }, 0);
-  };
+  // ── Ctrl+Enter to run ─────────────────────────────────────────────────────
+  const ctrlEnterExtension = Prec.highest(
+    keymap.of([{
+      key: 'Ctrl-Enter',
+      run: () => { runQueryRef.current(); return true; },
+    }])
+  );
 
   const SNIPPET_GROUPS: SqlGroup[] = [
     {
@@ -617,7 +505,6 @@ function SqlEditor() {
   ];
 
   const runQuery = async () => {
-    setAcItems([]); setAcPos(null);
     setRunning(true); setError(''); setResults(null); setCols([]); setAffectedRows(null); setStatusMsg(null);
     const t0 = performance.now();
     const { data: { session } } = await supabase.auth.getSession();
@@ -655,6 +542,9 @@ function SqlEditor() {
     setRunning(false);
   };
 
+  // Keep ref in sync so the CodeMirror Ctrl+Enter binding always calls latest runQuery
+  runQueryRef.current = runQuery;
+
   const exportCSV = () => {
     if (!results || !results.length) return;
     const header = cols.join(',');
@@ -676,12 +566,6 @@ function SqlEditor() {
     select: 'bg-blue-600', insert: 'bg-emerald-600',
     update: 'bg-amber-600', delete: 'bg-red-600', other: 'bg-gray-600',
   };
-  const acKindColor: Record<string, string> = {
-    keyword: 'text-blue-400', table: 'text-emerald-400', column: 'text-amber-400',
-  };
-  const acKindLabel: Record<string, string> = {
-    keyword: 'KW', table: 'TB', column: 'COL',
-  };
 
   return (
     <div className="flex h-full overflow-hidden">
@@ -695,7 +579,7 @@ function SqlEditor() {
             <div key={group.group}>
               <p className="px-3 pt-3 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">{group.group}</p>
               {group.items.map((s, i) => (
-                <button key={i} onClick={() => { setSql(s.sql); setAcItems([]); setAcPos(null); }}
+                <button key={i} onClick={() => setSql(s.sql)}
                   className="w-full text-left px-3 py-1.5 text-[12px] text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-sm transition-all flex items-center gap-1.5">
                   <ChevronRight className="w-3 h-3 text-gray-300 shrink-0" />{s.label}
                 </button>
@@ -723,58 +607,31 @@ function SqlEditor() {
           )}
         </div>
 
-        {/* Textarea + autocomplete */}
-        <div className="relative border-b border-gray-200">
-          <textarea
-            ref={textareaRef}
+        {/* CodeMirror SQL Editor */}
+        <div className="border-b border-gray-700 flex-shrink-0">
+          <CodeMirror
             value={sql}
-            onChange={e => { setSql(e.target.value); computeAC(e.target.value, e.target.selectionStart); }}
-            onClick={e => computeAC(sql, (e.target as HTMLTextAreaElement).selectionStart)}
-            onKeyDown={e => {
-              if (acItems.length > 0) {
-                if (e.key === 'ArrowDown') { e.preventDefault(); setAcIndex(i => Math.min(i + 1, acItems.length - 1)); return; }
-                if (e.key === 'ArrowUp')   { e.preventDefault(); setAcIndex(i => Math.max(i - 1, 0)); return; }
-                if ((e.key === 'Tab' || e.key === 'Enter') && acItems[acIndex]) { e.preventDefault(); applyAC(acItems[acIndex]); return; }
-                if (e.key === 'Escape') { setAcItems([]); setAcPos(null); return; }
-              }
-              if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); runQuery(); }
+            onChange={setSql}
+            theme={vscodeDark}
+            extensions={[sqlLang(), EditorView.lineWrapping, ctrlEnterExtension]}
+            height="220px"
+            basicSetup={{
+              lineNumbers: true,
+              foldGutter: true,
+              highlightActiveLine: true,
+              highlightSelectionMatches: true,
+              autocompletion: true,
+              bracketMatching: true,
+              closeBrackets: true,
+              indentOnInput: true,
             }}
-            rows={8} spellCheck={false}
-            className="w-full px-4 py-3 text-[13px] font-mono text-gray-100 bg-gray-900 focus:outline-none resize-none leading-relaxed"
+            style={{ fontSize: '13px' }}
           />
-          <div className="absolute bottom-2 right-3 text-[10px] text-gray-600 font-mono">Ctrl+Enter to run · Tab to complete</div>
-
-          {/* Autocomplete dropdown */}
-          {acItems.length > 0 && acPos && (
-            <div
-              ref={acRef}
-              style={{ top: acPos.top, left: Math.max(4, acPos.left) }}
-              className="absolute z-50 min-w-[210px] max-w-[300px] bg-gray-800 border border-gray-600 rounded-lg shadow-2xl overflow-hidden"
-            >
-              <div className="px-2.5 py-1 border-b border-gray-700 flex items-center justify-between bg-gray-900/60">
-                <span className="text-[10px] text-gray-500 font-mono">suggestions</span>
-                <span className="text-[10px] text-gray-600">↑↓ Tab/Enter · Esc</span>
-              </div>
-              <div className="max-h-52 overflow-y-auto">
-                {acItems.map((item, i) => (
-                  <div
-                    key={i}
-                    onMouseDown={e => { e.preventDefault(); applyAC(item); }}
-                    className={`flex items-center gap-2 px-3 py-1.5 cursor-pointer text-[12px] font-mono transition-colors
-                      ${i === acIndex ? 'bg-blue-600 text-white' : 'text-gray-200 hover:bg-gray-700'}`}
-                  >
-                    <span className={`text-[9px] font-bold w-7 shrink-0 ${i === acIndex ? 'text-blue-200' : acKindColor[item.kind]}`}>
-                      {acKindLabel[item.kind]}
-                    </span>
-                    <span className="flex-1 truncate">{item.text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <div className="bg-gray-900 px-3 py-1 text-[10px] text-gray-500 font-mono border-t border-gray-700">
+            Ctrl+Enter to run · SQL syntax highlighting powered by CodeMirror
+          </div>
         </div>
 
-        {/* Status bar */}
         <div className="px-4 py-1.5 bg-gray-100 border-b border-gray-200 flex items-center gap-4 text-[11px]">
           {error ? (
             <span className="text-red-600 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{error}</span>
