@@ -322,31 +322,31 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-md border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full">
-              <GraduationCap className="w-6 h-6 text-white" />
+        <div className="max-w-7xl mx-auto px-3 py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="p-1.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full shrink-0">
+              <GraduationCap className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-xs text-gray-500">{user?.email}</p>
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-xl font-bold text-gray-900 truncate">Admin Dashboard</h1>
+              <p className="text-[10px] sm:text-xs text-gray-500 truncate">{user?.email}</p>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <a href="/" className="text-sm text-blue-600 hover:text-blue-800 font-medium">← Home</a>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <a href="/" className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap">← Home</a>
             <a
               href="/database"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center space-x-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium"
+              className="flex items-center gap-1 px-2 sm:px-3 py-1.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors text-xs sm:text-sm font-medium"
             >
-              <Database className="w-4 h-4" />
-              <span>Database</span>
-              <ExternalLink className="w-3 h-3 opacity-60" />
+              <Database className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">Database</span>
+              <ExternalLink className="w-3 h-3 opacity-60 hidden sm:inline" />
             </a>
             <button onClick={signOut}
-              className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium">
-              <LogOut className="w-4 h-4" /><span>Logout</span>
+              className="flex items-center gap-1 px-2 sm:px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-xs sm:text-sm font-medium">
+              <LogOut className="w-3.5 h-3.5" /><span className="hidden xs:inline">Logout</span>
             </button>
           </div>
         </div>
@@ -388,24 +388,26 @@ export default function AdminDashboard() {
         )}
 
         {/* Tabs */}
-        <div className="flex space-x-1 mb-6 bg-white rounded-lg p-1 shadow-sm border">
-          {([
-            { id: 'students' as Tab, label: 'Students', icon: Users },
-            { id: 'teachers' as Tab, label: 'Teachers', icon: UserCheck },
-            { id: 'activity' as Tab, label: 'Activity', icon: Activity },
-            { id: 'search-logs' as Tab, label: 'Search Logs', icon: BarChart3 },
-            { id: 'analytics' as Tab, label: 'Analytics', icon: PieChart },
-          ]).map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center space-x-2 px-4 py-2.5 rounded-md text-sm font-medium transition-all ${
-                activeTab === tab.id
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}>
-              <tab.icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </button>
-          ))}
+        <div className="mb-6 bg-white rounded-lg p-1 shadow-sm border overflow-x-auto">
+          <div className="flex gap-1 min-w-max sm:min-w-0">
+            {([
+              { id: 'students' as Tab, label: 'Students', icon: Users },
+              { id: 'teachers' as Tab, label: 'Teachers', icon: UserCheck },
+              { id: 'activity' as Tab, label: 'Activity', icon: Activity },
+              { id: 'search-logs' as Tab, label: 'Logs', icon: BarChart3 },
+              { id: 'analytics' as Tab, label: 'Analytics', icon: PieChart },
+            ]).map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}>
+                <tab.icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Students Tab */}
