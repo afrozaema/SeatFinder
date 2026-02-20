@@ -432,45 +432,112 @@ function StatsView({ data, tableName }: { data: any[]; tableName: TableName }) {
 }
 
 // ─── SQL Editor ───────────────────────────────────────────────────────────────
+type SqlGroup = { group: string; items: { label: string; sql: string; type: 'select' | 'insert' | 'update' | 'delete' }[] };
+
 function SqlEditor() {
-  const [sql, setSql] = useState('SELECT * FROM students\nLIMIT 50;');
+  const [sql, setSql] = useState('SELECT * FROM students\nORDER BY created_at DESC\nLIMIT 50;');
   const [results, setResults] = useState<any[] | null>(null);
+  const [affectedRows, setAffectedRows] = useState<number | null>(null);
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [cols, setCols] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [running, setRunning] = useState(false);
   const [execTime, setExecTime] = useState<number | null>(null);
 
-  const SNIPPETS = [
-    { label: 'All students',        sql: 'SELECT * FROM students\nORDER BY created_at DESC\nLIMIT 50;' },
-    { label: 'All teachers',        sql: 'SELECT * FROM teachers\nLIMIT 50;' },
-    { label: 'Search logs',         sql: 'SELECT * FROM search_logs\nORDER BY created_at DESC\nLIMIT 25;' },
-    { label: 'Activity logs',       sql: 'SELECT * FROM activity_logs\nORDER BY created_at DESC\nLIMIT 25;' },
-    { label: 'Incidents',           sql: 'SELECT * FROM incidents\nLIMIT 25;' },
-    { label: 'Site settings',       sql: 'SELECT * FROM site_settings;' },
-    { label: 'Keep alive log',      sql: 'SELECT * FROM keep_alive_log\nORDER BY pinged_at DESC\nLIMIT 20;' },
-    { label: 'User roles',          sql: 'SELECT * FROM user_roles;' },
-    { label: 'Students by unit',    sql: 'SELECT unit, COUNT(*) as count\nFROM students\nGROUP BY unit\nORDER BY count DESC;' },
-    { label: 'Today search logs',   sql: 'SELECT * FROM search_logs\nWHERE created_at >= CURRENT_DATE\nORDER BY created_at DESC;' },
-    { label: 'Found vs not found',  sql: 'SELECT found, COUNT(*) as count\nFROM search_logs\nGROUP BY found;' },
+  const SNIPPET_GROUPS: SqlGroup[] = [
+    {
+      group: '🔍 SELECT',
+      items: [
+        { label: 'All students',       type: 'select', sql: 'SELECT * FROM students\nORDER BY created_at DESC\nLIMIT 50;' },
+        { label: 'All teachers',       type: 'select', sql: 'SELECT * FROM teachers\nLIMIT 50;' },
+        { label: 'Search logs',        type: 'select', sql: 'SELECT * FROM search_logs\nORDER BY created_at DESC\nLIMIT 25;' },
+        { label: 'Activity logs',      type: 'select', sql: 'SELECT * FROM activity_logs\nORDER BY created_at DESC\nLIMIT 25;' },
+        { label: 'Incidents',          type: 'select', sql: 'SELECT * FROM incidents\nLIMIT 25;' },
+        { label: 'Site settings',      type: 'select', sql: 'SELECT * FROM site_settings;' },
+        { label: 'Keep alive log',     type: 'select', sql: 'SELECT * FROM keep_alive_log\nORDER BY pinged_at DESC\nLIMIT 20;' },
+        { label: 'User roles',         type: 'select', sql: 'SELECT * FROM user_roles;' },
+        { label: 'Students by unit',   type: 'select', sql: 'SELECT unit, COUNT(*) as count\nFROM students\nGROUP BY unit\nORDER BY count DESC;' },
+        { label: 'Found vs not found', type: 'select', sql: 'SELECT found, COUNT(*) as count\nFROM search_logs\nGROUP BY found;' },
+      ],
+    },
+    {
+      group: '➕ INSERT',
+      items: [
+        { label: 'Insert student', type: 'insert', sql: `INSERT INTO students (roll_number, name, institution, building, room, floor, report_time, start_time, end_time, directions, map_url, unit, exam_date)\nVALUES (\n  'ROLL001',\n  'Student Name',\n  'Institution Name',\n  'Building A',\n  'Room 101',\n  '1st',\n  '08:30 AM',\n  '09:00 AM',\n  '12:00 PM',\n  'Take main entrance, go straight',\n  'https://maps.google.com/',\n  'UNIT-A',\n  CURRENT_DATE\n);` },
+        { label: 'Insert teacher', type: 'insert', sql: `INSERT INTO teachers (teacher_id, name, department, designation, email, phone, office_room)\nVALUES (\n  'TEACH001',\n  'Teacher Name',\n  'Computer Science',\n  'Professor',\n  'teacher@example.com',\n  '+1234567890',\n  'Room 201'\n);` },
+        { label: 'Insert incident', type: 'insert', sql: `INSERT INTO incidents (title, description, severity, status)\nVALUES (\n  'Service Disruption',\n  'Brief description of the incident',\n  'minor',\n  'investigating'\n);` },
+        { label: 'Insert site setting', type: 'insert', sql: `INSERT INTO site_settings (key, value)\nVALUES ('setting_key', 'setting_value')\nON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;` },
+      ],
+    },
+    {
+      group: '✏️ UPDATE',
+      items: [
+        { label: 'Update student room', type: 'update', sql: `UPDATE students\nSET room = 'Room 202', building = 'Building B'\nWHERE roll_number = 'ROLL001'\nRETURNING *;` },
+        { label: 'Update teacher dept', type: 'update', sql: `UPDATE teachers\nSET department = 'Mathematics', designation = 'Associate Professor'\nWHERE teacher_id = 'TEACH001'\nRETURNING *;` },
+        { label: 'Resolve incident',    type: 'update', sql: `UPDATE incidents\nSET status = 'resolved', resolved_at = NOW()\nWHERE status != 'resolved'\nRETURNING id, title, status, resolved_at;` },
+        { label: 'Update site setting', type: 'update', sql: `UPDATE site_settings\nSET value = 'new_value'\nWHERE key = 'setting_key'\nRETURNING *;` },
+      ],
+    },
+    {
+      group: '🗑️ DELETE',
+      items: [
+        { label: 'Delete student by roll', type: 'delete', sql: `DELETE FROM students\nWHERE roll_number = 'ROLL001'\nRETURNING id, roll_number, name;` },
+        { label: 'Delete teacher by id',   type: 'delete', sql: `DELETE FROM teachers\nWHERE teacher_id = 'TEACH001'\nRETURNING id, teacher_id, name;` },
+        { label: 'Delete old search logs', type: 'delete', sql: `DELETE FROM search_logs\nWHERE created_at < NOW() - INTERVAL '30 days'\nRETURNING id, roll_number, created_at;` },
+        { label: 'Delete incident by id',  type: 'delete', sql: `DELETE FROM incidents\nWHERE id = 'paste-uuid-here'\nRETURNING id, title;` },
+      ],
+    },
   ];
 
   const runQuery = async () => {
-    setRunning(true); setError(''); setResults(null); setCols([]);
+    setRunning(true); setError(''); setResults(null); setCols([]); setAffectedRows(null); setStatusMsg(null);
     const t0 = performance.now();
-    const trimmed = sql.trim().toLowerCase();
-    if (!trimmed.startsWith('select')) {
-      setError('⛔ Only SELECT queries are permitted.'); setRunning(false); return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setError('Not authenticated'); setRunning(false); return; }
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/execute-sql`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ sql }),
+        }
+      );
+      setExecTime(Math.round(performance.now() - t0));
+      const json = await res.json();
+
+      if (!res.ok || json.error) {
+        setError(json.error ?? `HTTP ${res.status}`);
+        setRunning(false);
+        return;
+      }
+
+      const result = json.data;
+      if (Array.isArray(result)) {
+        setResults(result);
+        setCols(result.length > 0 ? Object.keys(result[0]) : []);
+      } else if (result && typeof result === 'object') {
+        if ('affected_rows' in result) {
+          setAffectedRows(Number(result.affected_rows));
+        } else if ('status' in result) {
+          setStatusMsg(String(result.status));
+        } else {
+          // might be a single object row
+          setResults([result]);
+          setCols(Object.keys(result));
+        }
+      } else {
+        setStatusMsg('Query executed successfully');
+      }
+    } catch (e: any) {
+      setError(e.message ?? 'Network error');
     }
-    const match = sql.match(/from\s+(\w+)/i);
-    if (!match) { setError('Could not determine table name.'); setRunning(false); return; }
-    const table = match[1] as TableName;
-    const limitMatch = sql.match(/limit\s+(\d+)/i);
-    const limit = limitMatch ? parseInt(limitMatch[1]) : 100;
-    const { data, error: err } = await (supabase.from(table) as any).select('*').limit(limit);
-    setExecTime(Math.round(performance.now() - t0));
-    if (err) { setError(err.message); setRunning(false); return; }
-    setResults(data ?? []);
-    setCols(data && data.length > 0 ? Object.keys(data[0]) : []);
     setRunning(false);
   };
 
@@ -484,23 +551,50 @@ function SqlEditor() {
     URL.revokeObjectURL(url);
   };
 
+  const trimmedSql = sql.trim().toUpperCase();
+  const queryType = trimmedSql.startsWith('SELECT') || trimmedSql.startsWith('WITH') ? 'select'
+    : trimmedSql.startsWith('INSERT') ? 'insert'
+    : trimmedSql.startsWith('UPDATE') ? 'update'
+    : trimmedSql.startsWith('DELETE') ? 'delete'
+    : 'other';
+
+  const queryTypeBadge: Record<string, string> = {
+    select: 'bg-blue-600',
+    insert: 'bg-emerald-600',
+    update: 'bg-amber-600',
+    delete: 'bg-red-600',
+    other:  'bg-gray-600',
+  };
+
   return (
     <div className="flex h-full overflow-hidden">
-      <div className="w-48 shrink-0 bg-gray-50 border-r border-gray-200 flex flex-col">
-        <div className="px-3 py-3 border-b border-gray-200"><p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Saved Queries</p></div>
-        <div className="flex-1 overflow-y-auto py-2">
-          {SNIPPETS.map((s, i) => (
-            <button key={i} onClick={() => setSql(s.sql)}
-              className="w-full text-left px-3 py-2 text-[12px] text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-sm transition-all flex items-center gap-1.5">
-              <ChevronRight className="w-3 h-3 text-gray-300 shrink-0" />{s.label}
-            </button>
+      {/* Sidebar: Snippets */}
+      <div className="w-52 shrink-0 bg-gray-50 border-r border-gray-200 flex flex-col overflow-hidden">
+        <div className="px-3 py-3 border-b border-gray-200">
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Query Templates</p>
+        </div>
+        <div className="flex-1 overflow-y-auto py-1">
+          {SNIPPET_GROUPS.map(group => (
+            <div key={group.group}>
+              <p className="px-3 pt-3 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">{group.group}</p>
+              {group.items.map((s, i) => (
+                <button key={i} onClick={() => setSql(s.sql)}
+                  className="w-full text-left px-3 py-1.5 text-[12px] text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-sm transition-all flex items-center gap-1.5">
+                  <ChevronRight className="w-3 h-3 text-gray-300 shrink-0" />{s.label}
+                </button>
+              ))}
+            </div>
           ))}
         </div>
       </div>
+
+      {/* Main editor + results */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Toolbar */}
         <div className="bg-gray-800 px-4 py-2 flex items-center gap-2 border-b border-gray-700">
           <Code2 className="w-3.5 h-3.5 text-gray-400" />
-          <span className="text-[11px] text-gray-400 font-mono flex-1">SQL Query Editor</span>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${queryTypeBadge[queryType]} text-white`}>{queryType}</span>
+          <span className="text-[11px] text-gray-400 font-mono flex-1">SQL Editor — all statements supported</span>
           <button onClick={runQuery} disabled={running}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-[12px] font-semibold transition-colors disabled:opacity-50">
             {running ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />} Run (Ctrl+Enter)
@@ -511,22 +605,36 @@ function SqlEditor() {
             </button>
           )}
         </div>
+
+        {/* Editor */}
         <div className="relative border-b border-gray-200">
           <textarea value={sql} onChange={e => setSql(e.target.value)}
             onKeyDown={e => { if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); runQuery(); } }}
-            rows={6} spellCheck={false}
+            rows={8} spellCheck={false}
             className="w-full px-4 py-3 text-[13px] font-mono text-gray-100 bg-gray-900 focus:outline-none resize-none leading-relaxed" />
           <div className="absolute bottom-2 right-3 text-[10px] text-gray-600 font-mono">Ctrl+Enter to run</div>
         </div>
+
+        {/* Status bar */}
         <div className="px-4 py-1.5 bg-gray-100 border-b border-gray-200 flex items-center gap-4 text-[11px]">
-          {results !== null && !error ? (
-            <><span className="text-emerald-600 font-semibold flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />Query OK</span>
-              <span className="text-gray-500">{results.length} row{results.length !== 1 ? 's' : ''}</span>
-              {execTime !== null && <span className="text-gray-400">{execTime}ms</span>}</>
-          ) : error ? (
+          {error ? (
             <span className="text-red-600 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{error}</span>
-          ) : <span className="text-gray-400">Ready</span>}
+          ) : results !== null ? (
+            <><span className="text-emerald-600 font-semibold flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />Query OK</span>
+              <span className="text-gray-500">{results.length} row{results.length !== 1 ? 's' : ''} returned</span>
+              {execTime !== null && <span className="text-gray-400">{execTime}ms</span>}</>
+          ) : affectedRows !== null ? (
+            <><span className="text-emerald-600 font-semibold flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />Query OK</span>
+              <span className="text-gray-500">{affectedRows} row{affectedRows !== 1 ? 's' : ''} affected</span>
+              {execTime !== null && <span className="text-gray-400">{execTime}ms</span>}</>
+          ) : statusMsg ? (
+            <span className="text-emerald-600 font-semibold flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />{statusMsg}</span>
+          ) : (
+            <span className="text-gray-400">Ready — SELECT, INSERT, UPDATE, DELETE all supported</span>
+          )}
         </div>
+
+        {/* Results */}
         <div className="flex-1 overflow-auto bg-white">
           {results && results.length > 0 && !error ? (
             <table className="w-full text-[12px] border-collapse">
@@ -541,10 +649,24 @@ function SqlEditor() {
                 ))}
               </tbody>
             </table>
-          ) : results !== null && results.length === 0 ? (
+          ) : results !== null && results.length === 0 && !error ? (
             <div className="flex flex-col items-center justify-center h-32 text-gray-400"><Table2 className="w-8 h-8 mb-2" /><p className="text-sm">Empty set (0 rows)</p></div>
+          ) : affectedRows !== null ? (
+            <div className="flex flex-col items-center justify-center h-32 text-emerald-500">
+              <CheckCircle2 className="w-10 h-10 mb-2" />
+              <p className="text-sm font-semibold">{affectedRows} row{affectedRows !== 1 ? 's' : ''} affected</p>
+            </div>
+          ) : statusMsg ? (
+            <div className="flex flex-col items-center justify-center h-32 text-emerald-500">
+              <CheckCircle2 className="w-10 h-10 mb-2" />
+              <p className="text-sm font-semibold">{statusMsg}</p>
+            </div>
           ) : !error ? (
-            <div className="flex flex-col items-center justify-center h-32 text-gray-300"><Play className="w-8 h-8 mb-2" /><p className="text-sm">Run a query to see results</p></div>
+            <div className="flex flex-col items-center justify-center h-32 text-gray-300">
+              <Play className="w-8 h-8 mb-2" />
+              <p className="text-sm">Run a query to see results</p>
+              <p className="text-[11px] mt-1 text-gray-400">SELECT · INSERT · UPDATE · DELETE all supported</p>
+            </div>
           ) : null}
         </div>
       </div>
