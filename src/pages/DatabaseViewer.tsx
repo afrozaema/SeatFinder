@@ -10,7 +10,7 @@ import {
   BookOpen, Activity, Settings, FileText, Code2,
   List, ArrowUpDown, CheckSquare, Square, Copy,
   BarChart3, Columns, Info, Hash, AlignLeft, Calendar,
-  ToggleLeft, Layers
+  ToggleLeft, Layers, UserPlus, Shield, Mail, Key, UserX
 } from 'lucide-react';
 
 // ─── Types & Constants ────────────────────────────────────────────────────────
@@ -826,6 +826,255 @@ function TableDataView({ tableName, editable, onCountChange }: {
   );
 }
 
+// ─── User Manager ─────────────────────────────────────────────────────────────
+interface AdminUser {
+  id: string;
+  email: string;
+  created_at: string;
+  role: string;
+}
+
+function UserManager() {
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'admin' | 'super_admin'>('admin');
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    // Fetch user_roles + join with known emails stored in activity_logs
+    const { data: roles } = await supabase.from('user_roles').select('*');
+    if (roles) {
+      // Try to get emails from activity_logs for matching user_ids
+      const userIds = roles.map(r => r.user_id);
+      const emailMap: Record<string, string> = {};
+      for (const uid of userIds) {
+        const { data: logs } = await supabase
+          .from('activity_logs')
+          .select('user_id')
+          .eq('user_id', uid)
+          .limit(1);
+        if (logs) emailMap[uid] = uid; // We store uid as placeholder; real email comes from auth
+      }
+      setUsers(roles.map(r => ({
+        id: r.id,
+        email: r.user_id, // We'll show user_id since we can't query auth.users directly
+        created_at: r.created_at,
+        role: r.role,
+      })));
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreating(true); setError(''); setSuccess('');
+    try {
+      // 1. Sign up the new user via Supabase Auth admin (using service role via edge function isn't available here)
+      // We use signUp which creates the user; then admin manually assigns role
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: window.location.origin }
+      });
+      if (signUpErr) throw new Error(signUpErr.message);
+      const newUserId = signUpData.user?.id;
+      if (!newUserId) throw new Error('User creation failed');
+
+      // 2. Assign role
+      const { error: roleErr } = await supabase.from('user_roles').insert({
+        user_id: newUserId,
+        role,
+      });
+      if (roleErr) throw new Error(roleErr.message);
+
+      setSuccess(`User ${email} created with role "${role}". They must verify their email before logging in.`);
+      setEmail(''); setPassword(''); setRole('admin');
+      setShowCreate(false);
+      fetchUsers();
+    } catch (err: any) {
+      setError(err.message);
+    }
+    setCreating(false);
+  };
+
+  const handleDeleteRole = async (id: string) => {
+    setDeletingId(id);
+    await supabase.from('user_roles').delete().eq('id', id);
+    setDeleteConfirmId(null);
+    setDeletingId(null);
+    fetchUsers();
+  };
+
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden bg-white">
+      {/* Toolbar */}
+      <div className="bg-gray-50 border-b border-gray-200 px-5 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Shield className="w-4 h-4 text-indigo-500" />
+          <span className="font-semibold text-gray-800 text-sm">User & Role Management</span>
+          <span className="text-[11px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">{users.length} users</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={fetchUsers} className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 text-gray-500 transition-all"><RefreshCw className="w-3.5 h-3.5" /></button>
+          <button onClick={() => { setShowCreate(true); setError(''); setSuccess(''); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[12px] font-semibold transition-colors shadow-sm">
+            <UserPlus className="w-3.5 h-3.5" /> Create Admin User
+          </button>
+        </div>
+      </div>
+
+      {success && (
+        <div className="mx-5 mt-4 flex items-start gap-2 text-emerald-700 text-sm bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+          <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>{success}</span>
+          <button onClick={() => setSuccess('')} className="ml-auto text-emerald-400 hover:text-emerald-600"><X className="w-3.5 h-3.5" /></button>
+        </div>
+      )}
+
+      {/* Info banner */}
+      <div className="mx-5 mt-4 flex items-start gap-2 text-blue-700 text-[12px] bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+        <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+        <span>Showing admin/super_admin users only. Regular visitors don't have accounts — they access the site publicly.</span>
+      </div>
+
+      {/* Users table */}
+      <div className="flex-1 overflow-auto p-5">
+        {loading ? (
+          <div className="flex items-center justify-center h-40"><RefreshCw className="w-5 h-5 text-indigo-500 animate-spin" /></div>
+        ) : users.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-40 text-gray-400">
+            <Users className="w-10 h-10 mb-3" />
+            <p className="text-sm font-medium">No admin users found</p>
+            <p className="text-xs mt-1">Create your first admin user above</p>
+          </div>
+        ) : (
+          <table className="w-full text-[13px] border-collapse rounded-xl overflow-hidden border border-gray-200">
+            <thead>
+              <tr className="bg-gray-100 border-b-2 border-gray-200">
+                <th className="px-4 py-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider">#</th>
+                <th className="px-4 py-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider">User ID</th>
+                <th className="px-4 py-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider">Role</th>
+                <th className="px-4 py-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider">Assigned At</th>
+                <th className="px-4 py-3 text-center text-[11px] font-bold text-gray-600 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u, i) => (
+                <tr key={u.id} className={`border-b border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'} hover:bg-indigo-50/30 transition-colors`}>
+                  <td className="px-4 py-3 text-gray-400 font-mono">{i + 1}</td>
+                  <td className="px-4 py-3 font-mono text-[12px] text-blue-600">{u.email.substring(0, 20)}…</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                      u.role === 'super_admin'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'bg-indigo-100 text-indigo-700'
+                    }`}>
+                      {u.role === 'super_admin' ? '⭐ super_admin' : '🛡 admin'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 text-[12px]">{new Date(u.created_at).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => setDeleteConfirmId(u.id)}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-100 transition-all"
+                      title="Remove role"
+                    >
+                      <UserX className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Create User Modal */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-gray-200">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-gray-50 rounded-t-2xl">
+              <div className="flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-indigo-500" />
+                <span className="font-semibold text-gray-800">Create Admin User</span>
+              </div>
+              <button onClick={() => setShowCreate(false)} className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-gray-700 transition-colors"><X className="w-4 h-4" /></button>
+            </div>
+            <form onSubmit={handleCreate} className="px-5 py-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1"><Mail className="w-3 h-3" /> Email</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="admin@example.com"
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1"><Key className="w-3 h-3" /> Password</label>
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Min. 6 characters" minLength={6}
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1"><Shield className="w-3 h-3" /> Role</label>
+                <select value={role} onChange={e => setRole(e.target.value as 'admin' | 'super_admin')}
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="admin">🛡 admin — Can manage students, teachers, data</option>
+                  <option value="super_admin">⭐ super_admin — Full access including user roles</option>
+                </select>
+              </div>
+              {error && (
+                <div className="flex items-center gap-2 text-red-600 text-xs bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />{error}
+                </div>
+              )}
+              <div className="flex justify-end gap-2 pt-1">
+                <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-100 transition-colors">Cancel</button>
+                <button type="submit" disabled={creating}
+                  className="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2 transition-colors">
+                  {creating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                  {creating ? 'Creating…' : 'Create User'}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Delete Role Confirm */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-5 border border-gray-200">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center shrink-0"><UserX className="w-4 h-4 text-red-600" /></div>
+              <div>
+                <h3 className="font-semibold text-gray-900 text-sm">Remove admin role?</h3>
+                <p className="text-gray-500 text-xs mt-0.5">This will revoke their dashboard access. The account still exists.</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setDeleteConfirmId(null)} className="px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors">Cancel</button>
+              <button onClick={() => handleDeleteRole(deleteConfirmId)} disabled={!!deletingId}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 flex items-center gap-1.5 transition-colors">
+                {deletingId ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <UserX className="w-3.5 h-3.5" />}
+                Remove Role
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function DatabaseViewer() {
   const { user, isAdmin, loading, adminLoading, signIn, signOut } = useAuth();
@@ -834,7 +1083,7 @@ export default function DatabaseViewer() {
   const [showPw, setShowPw]           = useState(false);
   const [loginErr, setLoginErr]       = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
-  const [activeView, setActiveView]   = useState<'browser' | 'sql'>('browser');
+  const [activeView, setActiveView]   = useState<'browser' | 'sql' | 'users'>('browser');
   const [selectedTable, setSelectedTable] = useState<TableName>(ALL_TABLES[0].name);
   const [tableCounts, setTableCounts] = useState<Record<string, number>>({});
   const [expandedDb, setExpandedDb]   = useState(true);
@@ -905,7 +1154,7 @@ export default function DatabaseViewer() {
     </div>
   );
 
-  const currentMeta = ALL_TABLES.find(t => t.name === selectedTable)!;
+  const currentMeta = ALL_TABLES.find(t => t.name === selectedTable) ?? ALL_TABLES[0];
 
   return (
     <div className="h-screen bg-gray-100 flex flex-col overflow-hidden font-mono">
@@ -925,6 +1174,10 @@ export default function DatabaseViewer() {
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold transition-colors ${activeView === 'sql' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
             <Code2 className="w-3.5 h-3.5" /> SQL Editor
           </button>
+          <button onClick={() => setActiveView('users')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-semibold transition-colors ${activeView === 'users' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
+            <Users className="w-3.5 h-3.5" /> Users
+          </button>
         </div>
         <div className="flex-1" />
         <div className="flex items-center gap-2 text-[11px] text-gray-400">
@@ -937,7 +1190,7 @@ export default function DatabaseViewer() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
+        {/* Sidebar - only for browser view */}
         {activeView === 'browser' && (
           <aside className="w-52 shrink-0 bg-gray-800 border-r border-gray-700 flex flex-col overflow-hidden">
             <div className="px-3 py-2 border-b border-gray-700">
@@ -972,7 +1225,7 @@ export default function DatabaseViewer() {
               )}
             </div>
             <div className="border-t border-gray-700 px-3 py-2 text-[10px] text-gray-500">
-              <p>PostgreSQL · Supabase</p>
+              <p>PostgreSQL · Cloud DB</p>
               <p className="text-emerald-500 flex items-center gap-1 mt-0.5"><CheckCircle2 className="w-2.5 h-2.5" /> Connected</p>
             </div>
           </aside>
@@ -982,6 +1235,8 @@ export default function DatabaseViewer() {
         <main className="flex-1 flex flex-col overflow-hidden bg-white">
           {activeView === 'sql' ? (
             <SqlEditor />
+          ) : activeView === 'users' ? (
+            <UserManager />
           ) : (
             <>
               <div className="bg-gray-100 border-b border-gray-200 px-4 flex items-center gap-0 h-9 shrink-0">

@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   GraduationCap, LogOut, Plus, Pencil, Trash2, Search, Users,
   Building, MapPin, Clock, Save, X, AlertCircle, CheckCircle,
-  Activity, BarChart3, Filter, ChevronDown, Eye, TrendingUp, UserCheck, Mail, Phone, Briefcase, PieChart
+  Activity, BarChart3, Filter, ChevronDown, Eye, TrendingUp, UserCheck, Mail, Phone, Briefcase, PieChart, Database, ExternalLink
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 
@@ -334,6 +334,16 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center space-x-3">
             <a href="/" className="text-sm text-blue-600 hover:text-blue-800 font-medium">← Home</a>
+            <a
+              href="/database"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium"
+            >
+              <Database className="w-4 h-4" />
+              <span>Database</span>
+              <ExternalLink className="w-3 h-3 opacity-60" />
+            </a>
             <button onClick={signOut}
               className="flex items-center space-x-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium">
               <LogOut className="w-4 h-4" /><span>Logout</span>
