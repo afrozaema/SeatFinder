@@ -26,9 +26,8 @@ export default function AdminLogin() {
     const { error } = await signIn(email, password);
     if (error) {
       setError(error.message);
-    } else {
-      navigate('/admin');
     }
+    // Navigation is handled by the useEffect that watches user/isAdmin state
     setLoading(false);
   };
 
