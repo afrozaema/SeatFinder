@@ -444,7 +444,7 @@ export default function AdminDashboard() {
                 </button>
                 <button
                   onClick={() => { setShowForm(true); setEditingId(null); setFormData(emptyStudent); }}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 flex items-center space-x-2 font-semibold shadow-lg transition-all"
+                  className="w-fit px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 flex items-center space-x-2 font-semibold shadow-lg transition-all"
                 >
                   <Plus className="w-5 h-5" /><span>Add Student</span>
                 </button>
@@ -564,7 +564,7 @@ export default function AdminDashboard() {
               </div>
               <button
                 onClick={() => { setShowTeacherForm(true); setEditingTeacherId(null); setTeacherFormData(emptyTeacher); }}
-                className="px-6 py-3 bg-gradient-to-r from-teal-600 to-blue-600 text-white rounded-lg hover:from-teal-700 hover:to-blue-700 flex items-center space-x-2 font-semibold shadow-lg transition-all"
+                className="w-fit px-6 py-3 bg-gradient-to-r from-teal-600 to-blue-600 text-white rounded-lg hover:from-teal-700 hover:to-blue-700 flex items-center space-x-2 font-semibold shadow-lg transition-all"
               >
                 <Plus className="w-5 h-5" /><span>Add Teacher</span>
               </button>
