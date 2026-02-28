@@ -5,8 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   GraduationCap, LogOut, Plus, Pencil, Trash2, Search, Users,
   Building, MapPin, Clock, Save, X, AlertCircle, CheckCircle,
-  Activity, BarChart3, Filter, ChevronDown, Eye, TrendingUp, UserCheck, Mail, Phone, Briefcase, PieChart, Database, ExternalLink
+  Activity, BarChart3, Filter, ChevronDown, Eye, TrendingUp, UserCheck, Mail, Phone, Briefcase, PieChart, Database, ExternalLink, Settings
 } from 'lucide-react';
+import AdminSettings from '@/components/AdminSettings';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RePieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 
 interface Student {
@@ -62,7 +63,7 @@ const emptyTeacher = {
   teacher_id: '', name: '', department: '', designation: '', email: '', phone: '', office_room: ''
 };
 
-type Tab = 'students' | 'teachers' | 'activity' | 'search-logs' | 'analytics';
+type Tab = 'students' | 'teachers' | 'activity' | 'search-logs' | 'analytics' | 'settings';
 
 export default function AdminDashboard() {
   const { user, isAdmin, loading: authLoading, adminLoading, signOut } = useAuth();
@@ -396,6 +397,7 @@ export default function AdminDashboard() {
               { id: 'activity' as Tab, label: 'Activity', icon: Activity },
               { id: 'search-logs' as Tab, label: 'Logs', icon: BarChart3 },
               { id: 'analytics' as Tab, label: 'Analytics', icon: PieChart },
+              { id: 'settings' as Tab, label: 'Settings', icon: Settings },
             ]).map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
@@ -891,6 +893,9 @@ export default function AdminDashboard() {
             </div>
           );
         })()}
+
+        {/* Settings Tab */}
+        {activeTab === 'settings' && <AdminSettings />}
       </div>
 
       {/* Student Form Modal */}
