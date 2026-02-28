@@ -54,7 +54,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // 2. Get initial session — this is the source of truth for first load
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        // Clear invalid session (e.g. stale refresh token)
+        console.warn('Session error, signing out:', error.message);
+        supabase.auth.signOut();
+        setSession(null);
+        setUser(null);
+        setAdminLoading(false);
+        setLoading(false);
+        initializedRef.current = true;
+        return;
+      }
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
